@@ -46,6 +46,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case fortune
         case master
         case tavern
+        /// The stable on Поділ (2026-11-08, `spec-wagon.md`): the wagon is
+        /// hired here. `CapitalController+Stable.swift`.
+        case stable
 
         var titleKey: String  { "capital.location.\(rawValue).title" }
         var bodyKey: String   { "capital.location.\(rawValue).body" }
@@ -131,6 +134,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize(Location.fortune.buttonKey, locale: locale)] = onFortune
                 router[lingo.localize(Location.master.buttonKey,  locale: locale)] = onMaster
                 router[lingo.localize(Location.tavern.buttonKey,  locale: locale)] = onTavern
+                router[lingo.localize(Location.stable.buttonKey,  locale: locale)] = onStable
                 router[lingo.localize("capital.button.guild",     locale: locale)] = onGuild
             }
 
@@ -254,6 +258,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
     private func onMaster(context: Context)  async throws -> Bool { try await showMaster(context: context); return true }
     private func onTavern(context: Context)  async throws -> Bool { try await showTavern(context: context); return true }
+    private func onStable(context: Context)  async throws -> Bool { try await showStable(context: context); return true }
 
     /// The Guildhall is a full controller, not an inline sub-flow — flip
     /// routerName to "guild" (GuildController takes over the reply keyboard) and
@@ -491,8 +496,20 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Lingo's `%{var}` parser. See .memory/localization.md.
         let text = "🐎 " + lingo.localize(key, locale: locale, interpolations: [
             "remaining": TravelService.formatCountdown(remaining, lingo: lingo, locale: locale)
-        ])
+        ]) + (try await Self.wagonRoadLine(context: context))
         try await Self.sendRoadCard(context: context, text: text)
+    }
+
+    /// «🫏 Позаду торохтить віз: 150/200.» under every road card while the hire
+    /// runs (2026-11-08, `spec-wagon.md` §4) — the wagon rides with the player.
+    /// Empty when there is none, so a trip without one reads as it always did.
+    static func wagonRoadLine(context: Context) async throws -> String {
+        guard let status = try await WagonService.status(for: context.session, on: context.db), status.running else {
+            return ""
+        }
+        return "\n\(WagonDisplay.icon) " + context.lingo.localize("travel.wagon_behind", locale: context.session.locale,
+                                                                   interpolations: ["used": "\(status.used)",
+                                                                                    "cap": "\(status.capacity)"])
     }
 
     /// Where the road's picture lives. Missing on disk, `sendCachedPhoto`
@@ -568,6 +585,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "button": Commands.turnBack.button(for: context.session, lingo).text
             ])
         }
+        text += try await Self.wagonRoadLine(context: context)
         try await Self.sendRoadCard(context: context, text: text)
     }
 
@@ -583,7 +601,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = "↩️ " + lingo.localize("travel.turned_back", locale: locale, interpolations: [
             "destination": lingo.localize(destKey, locale: locale),
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
-        ])
+        ]) + (try await wagonRoadLine(context: context))
         try await sendRoadCard(context: context, text: text)
     }
 
@@ -784,22 +802,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Sell — category picker
 
-    /// Build the per-listing (item, in-bag-qty) pairs for the sell list,
-    /// filtered to listings where the player has at least one full packet.
-    /// Below the threshold the row would be a dead tap — better to hide it.
-    private func sellableListings(for user: User, on db: any Database) async throws -> [(TraderListing, Int)] {
-        guard let userId = user.id else { return [] }
-        var out: [(TraderListing, Int)] = []
+    /// Build the per-listing (item, in the bag, on the wagon) rows for the sell
+    /// list, filtered to listings where the player has at least one full
+    /// packet. Below the threshold the row would be a dead tap — better to hide
+    /// it. The wagon counts while it is in town (2026-11-08).
+    private func sellableListings(for user: User, on db: any Database) async throws -> [(TraderListing, Int, Int)] {
+        guard user.id != nil else { return [] }
+        var out: [(TraderListing, Int, Int)] = []
         for listing in TraderCatalog.all {
-            let qty = try await InventoryEntry.totalQuantity(of: listing.itemId, for: userId, on: db)
-            if qty >= listing.sellPacketQty {
-                out.append((listing, qty))
+            let stock = try await WagonService.townStock(of: listing.itemId, for: user, on: db)
+            if stock.bag + stock.wagon >= listing.sellPacketQty {
+                out.append((listing, stock.bag, stock.wagon))
             }
         }
         return out
     }
 
-    private func renderSellBody(session: User, lingo: Lingo, sellable: [(TraderListing, Int)]) -> String {
+    private func renderSellBody(session: User, lingo: Lingo, sellable: [(TraderListing, Int, Int)]) -> String {
         let locale = session.locale
         let title = lingo.localize("capital.trader.sell_title", locale: locale)
         let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
@@ -833,16 +852,21 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Sell — items in category
 
-    private func sellItemsKeyboard(category: ItemType, lingo: Lingo, locale: String, sellable: [(TraderListing, Int)]) -> TGInlineKeyboardMarkup {
+    private func sellItemsKeyboard(category: ItemType, lingo: Lingo, locale: String, sellable: [(TraderListing, Int, Int)]) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
-        for (listing, qty) in sellable {
+        for (listing, qty, onWagon) in sellable {
             guard let item = ItemCatalog.find(listing.itemId), item.type == category else { continue }
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
             let name = lingo.localize(item.nameKey, locale: locale)
             // Single button per listing — bag quantity stays so the player sees
             // how much they can dump without opening the prompt; tap opens the
-            // "How many?" prompt directly.
-            let label = "\(iconPrefix)\(name) · 🎒 \(qty) · 🪙 \(listing.sellPacketSilver)"
+            // "How many?" prompt directly. With the wagon in town the row shows
+            // where the units lie, «🎒 4 · 🫏 100» (2026-11-08), a store holding
+            // none left out.
+            let stores = onWagon > 0
+                ? (qty > 0 ? "🎒 \(qty) · " : "") + "\(WagonDisplay.icon) \(onWagon)"
+                : "🎒 \(qty)"
+            let label = "\(iconPrefix)\(name) · \(stores) · 🪙 \(listing.sellPacketSilver)"
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "trader:sellN:\(listing.itemId)")])
         }
         let back = lingo.localize("capital.trader.button.back_to_categories", locale: locale)
@@ -932,7 +956,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// its «📌» for the journal (2026-10-10).
     private func editToMasterLesson(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale, user = context.session
-        guard let userId = user.id,
+        guard user.id != nil,
               try await WeaponUpgradeService.lessonAvailable(for: user, on: context.db),
               let weapon = try await WeaponUpgradeService.equippedWeapon(for: user, on: context.db),
               let item = ItemCatalog.find(weapon.itemId),
@@ -957,7 +981,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         lines.append("")
         lines.append("<b>" + lingo.localize("capital.master.lesson.price", locale: locale) + "</b>")
         for input in next.inputs {
-            let have = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+            // The bag and the hired wagon in town (2026-11-08) — what the lesson draws from.
+            let have = try await WagonService.townTotal(of: input.itemId, for: user, on: context.db)
             lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity, lingo: lingo, locale: locale))
         }
         lines.append(RequirementLine.silver(have: user.silver, need: MasterCatalog.weaponLessonSilver,
@@ -1237,12 +1262,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// change no number without one screen saying so.
     private func editToMasterConfirmEnchant(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        guard let userId = context.session.id,
+        guard context.session.id != nil,
               let row = try await ownedRow(entryId, for: context.session, on: context.db),
               let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else {
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context); return
         }
-        let inBag = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: context.db)
+        // The bag and the hired wagon in town (2026-11-08) — what the enchant draws from.
+        let inBag = try await WagonService.townTotal(of: step.materialId, for: context.session, on: context.db)
         let from = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
         let to   = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: step.level)
         var lines = [
@@ -1783,6 +1809,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         if data.hasPrefix("treasury:") {
             try await Self.onTreasuryCallback(data, query: query, messageId: message.messageId, isPhoto: isPhoto,
                                               context: context)
+            return true
+        }
+        // The stable on Поділ (2026-11-08). Only here, like the Treasury: a
+        // stale hire button tapped away from the capital never reaches a hire —
+        // and `WagonService.hire` refuses off the capital on its own as well.
+        if data.hasPrefix("stable:") {
+            try await Self.onStableCallback(data, query: query, messageId: message.messageId, isPhoto: isPhoto,
+                                            context: context)
             return true
         }
         if data.hasPrefix("quest:take:") {
@@ -2375,7 +2409,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             ])
             await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free, let need):
-            let text = lingo.localize("capital.trader.bag_full", count: free, locale: locale, interpolations: [
+            // The bag and the wagon were both full (2026-11-08) when the wagon
+            // is in town and carries the item; the bag alone otherwise.
+            let wagonInTown = (try? await WagonService.inTown(for: context.session, on: context.db)) ?? false
+            let withWagon = wagonInTown && WagonService.carries(itemId)
+            let text = lingo.localize(withWagon ? "capital.trader.bag_and_wagon_full" : "capital.trader.bag_full",
+                                      count: free, locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])
             await postStatusBanner("❌ \(text)", context: context)
@@ -2409,8 +2448,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// where the job warning shows, and a sale into a job is the one trade
     /// buying back does not undo. The trader and the market both ask this.
     fileprivate func loneUnitWithoutJob(itemId: String, context: Context) async throws -> Bool {
-        let inBag = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
-        guard inBag == 1 else { return false }
+        // The bag and, while it is in town, the wagon (2026-11-08): both places
+        // that ask this take from the two.
+        let stock = try await WagonService.townStock(of: itemId, for: context.session, on: context.db)
+        guard stock.bag + stock.wagon == 1 else { return false }
         return await questWarningSuffix(itemId: itemId, context: context).isEmpty
     }
 
@@ -2443,6 +2484,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return lingo.localize("capital.trader.bulkN.sell_prompt", locale: locale, interpolations: ["item": itemName])
         }
         let free = try await InventoryEntry.freeSlots(for: context.session, on: context.db)
+        // With the wagon in town the purchase may land on it too (2026-11-08):
+        // its free places beside the bag's, from the room the purchase checks.
+        if try await WagonService.inTown(for: context.session, on: context.db), WagonService.carries(itemId) {
+            let room = try await WagonService.room(for: itemId, user: context.session, wagonInTown: true, on: context.db)
+            return lingo.localize("capital.trader.bulkN.buy_prompt_wagon", locale: locale, interpolations: [
+                "item": itemName,
+                "bag_icon": "🎒",
+                "free": lingo.localize("inventory.free", locale: locale, interpolations: ["free": "\(free)"]),
+                "wagon_icon": WagonDisplay.icon,
+                "wagon_free": lingo.localize("inventory.free", locale: locale, interpolations: ["free": "\(room.wagonFree)"])
+            ])
+        }
         return lingo.localize("capital.trader.bulkN.buy_prompt", locale: locale, interpolations: [
             "item": itemName,
             // The icon rides in as a value: 🎒 written ahead of `%{free}` breaks
@@ -2985,13 +3038,20 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Sell — item picker (bag stackables)
 
-    /// Distinct stackable items in the bag (unequipped, qty ≥ 1) with totals.
+    /// Distinct stackable items in the bag (unequipped, qty ≥ 1) with totals —
+    /// and, while the hired wagon is in town, what it carries too (2026-11-08):
+    /// a lot is escrowed from both.
     private func sellableBagItems(for user: User, on db: any Database) async throws -> [(itemId: String, qty: Int)] {
         let rows = try await InventoryEntry.list(for: user, on: db)
         var totals: [String: Int] = [:]
         for row in rows where row.equippedSlot == nil {
             guard let item = ItemCatalog.find(row.itemId), item.stackable else { continue }
             totals[row.itemId, default: 0] += row.quantity
+        }
+        if let userId = user.id, try await WagonService.inTown(for: user, on: db) {
+            for pile in try await WagonService.cargo(for: userId, on: db) {
+                totals[pile.itemId, default: 0] += pile.quantity
+            }
         }
         return totals
             .filter { $0.value > 0 }
@@ -3122,9 +3182,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         if pending.stage == .quantity {
-            // Validate against the bag before advancing to the price stage.
-            guard let userId = context.session.id else { return }
-            let inBag = try await InventoryEntry.totalQuantity(of: pending.itemId, for: userId, on: context.db)
+            // Validate against the bag — and the wagon in town — before
+            // advancing to the price stage.
+            guard context.session.id != nil else { return }
+            let inBag = try await WagonService.townTotal(of: pending.itemId, for: context.session, on: context.db)
             if number > inBag {
                 let err = lingo.localize("capital.market.qty_too_high", locale: locale, interpolations: ["have": "\(inBag)"])
                 await reshowMarketPrompt(pending: pending, error: err, context: context)
@@ -3196,8 +3257,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case .notEnoughSilver(let have, let need):
             let text = lingo.localize("capital.market.err.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
             await postStatusBanner("❌ \(text)", context: context)
-        case .inventoryFull(let free, let need):
-            let text = lingo.localize("capital.market.err.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "\(need)"])
+        case .inventoryFull(let free, let need, let withWagon):
+            let key = withWagon ? "capital.market.err.bag_and_wagon_full" : "capital.market.err.bag_full"
+            let text = lingo.localize(key, locale: locale, interpolations: ["free": "\(free)", "need": "\(need)"])
             await postStatusBanner("❌ \(text)", context: context)
         }
     }
@@ -3213,7 +3275,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             await postStatusBanner("❌ \(lingo.localize("capital.market.err.lot_gone", locale: locale))", context: context)
         case .notOwner:
             await postStatusBanner("❌ \(lingo.localize("capital.market.err.lot_gone", locale: locale))", context: context)
-        case .inventoryFull(_, let need):
+        case .inventoryFull(_, let need, _):
             let text = lingo.localize("capital.market.err.cant_cancel_bag_full", locale: locale, interpolations: ["need": "\(need)"])
             await postStatusBanner("❌ \(text)", context: context)
         }
@@ -3390,7 +3452,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // Not offered → ask how many. A lone unit goes in at once: the only
             // answer could be 1 (2026-10-11 — a players' proposal, the owner's
             // variant A), and the offer itself is undone by the same tap.
-            let owned = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
+            let owned = try await WagonService.townTotal(of: itemId, for: context.session, on: context.db)
             guard owned == 1 else {
                 try await openTradeNumberPrompt(kind: .itemQty(itemId: itemId), screenMessageId: messageId, isPhoto: isPhoto, context: context)
                 return
@@ -3438,7 +3500,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case .silver:
             return lingo.localize("capital.trade.silver_prompt", locale: locale, interpolations: ["have": "\(context.session.silver)"])
         case .itemQty(let itemId):
-            let have = (try? await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)) ?? 0
+            let have = (try? await WagonService.townTotal(of: itemId, for: context.session, on: context.db)) ?? 0
             let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
             return lingo.localize("capital.trade.qty_prompt", locale: locale, interpolations: ["item": name, "have": "\(have)"])
         }
@@ -3486,7 +3548,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case .silver:
             updated = await TradeStore.shared.setSilver(tg: context.session.telegramId, amount: min(n, context.session.silver))
         case .itemQty(let itemId):
-            let owned = (try? await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)) ?? 0
+            let owned = (try? await WagonService.townTotal(of: itemId, for: context.session, on: context.db)) ?? 0
             updated = await TradeStore.shared.setStack(tg: context.session.telegramId, itemId: itemId, qty: n, ownedQty: owned)
         }
 
@@ -4509,6 +4571,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             rows = [
                 [button(Location.trader.buttonKey), button(Location.master.buttonKey)],
                 [button(Location.tavern.buttonKey), button(Location.fortune.buttonKey)],
+                // The stable by the gate (2026-11-08, the owner's pick: a third
+                // row on Поділ) — the wagon it hires carries what the trader buys.
+                [button(Location.stable.buttonKey)],
                 utility,
                 [back]
             ]

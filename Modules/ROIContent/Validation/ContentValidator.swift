@@ -42,6 +42,7 @@ public enum ContentValidator {
         issues += validateKingChain(bundle)
         issues += validateTrainingGround(bundle)
         issues += validateTreasury(bundle)
+        issues += validateStable(bundle)
         issues += validateEvents(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -2847,6 +2848,66 @@ public enum ContentValidator {
             if item.price < 1 {
                 fail(path + ".price", "treasury.price_not_positive", "price is \(item.price) — a free entry is a gift, not a sale",
                      id: item.id)
+            }
+        }
+        return issues
+    }
+
+    /// `stable.json` — the wagon (2026-11-08, `spec-wagon.md`). Each rule has a
+    /// failing case in `WagonTests`.
+    ///
+    /// The wagon is what the owner asked for in one sentence — «в обоз можна
+    /// буде завантажити більше матеріалів ніж в сумку» — so a capacity that is
+    /// not above the largest bag is refused. The lengths are the owner's other
+    /// rule, «щоб найдовший був дешевший за хвилину користування»: each longer
+    /// length costs more in total (or nobody buys the shorter one) and less per
+    /// minute than the one before it, compared by cross-multiplying so no
+    /// rounding can let an equal price through.
+    private static func validateStable(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let wagon = bundle.stable?.wagon else { return [] }
+        let file = "stable.json"
+        var issues: [ContentIssue] = []
+        func fail(_ path: String, _ rule: String, _ message: String) {
+            issues.append(.init(severity: .error, file: file, path: path, id: nil, rule: rule, message: message))
+        }
+
+        let largestBag = bundle.bags.capacities.max() ?? 0
+        if wagon.capacity <= largestBag {
+            fail("wagon.capacity", "stable.wagon_not_above_bag",
+                 "the wagon holds \(wagon.capacity) and the largest bag \(largestBag) — it must carry more than any bag")
+        }
+        // The road with a wagon (the owner, 2026-11-08: three minutes, not two)
+        // is never shorter than the road without one.
+        if let road = bundle.tuning?.time.gameTime.travelMinutes, wagon.travelMinutes < road {
+            fail("wagon.travelMinutes", "stable.wagon_faster_than_road",
+                 "a crossing with the wagon takes \(wagon.travelMinutes) min and without it \(road) — a loaded wagon is never the faster way")
+        }
+        if wagon.lengths.isEmpty {
+            fail("wagon.lengths", "stable.wagon_no_lengths", "the stable has no length to hire the wagon for")
+        }
+        for (index, length) in wagon.lengths.enumerated() {
+            let path = "wagon.lengths[\(index)]"
+            if length.minutes < 1 || length.silver < 1 {
+                fail(path, "stable.wagon_length_not_positive",
+                     "\(length.minutes) min for \(length.silver) silver — both must be at least 1")
+                continue
+            }
+            guard index > 0 else { continue }
+            let shorter = wagon.lengths[index - 1]
+            guard shorter.minutes >= 1, shorter.silver >= 1 else { continue }
+            if length.minutes <= shorter.minutes {
+                fail(path, "stable.wagon_length_not_longer",
+                     "\(length.minutes) min after \(shorter.minutes) — the lengths go shortest first")
+            } else {
+                if length.silver <= shorter.silver {
+                    fail(path, "stable.wagon_longer_not_pricier",
+                         "\(length.minutes) min for \(length.silver) after \(shorter.minutes) min for \(shorter.silver) — nobody would hire the shorter one")
+                }
+                // silver/minutes strictly falling: s_i / m_i < s_(i-1) / m_(i-1).
+                if length.silver * shorter.minutes >= shorter.silver * length.minutes {
+                    fail(path, "stable.wagon_longer_not_cheaper_per_minute",
+                         "\(length.minutes) min for \(length.silver) is not cheaper per minute than \(shorter.minutes) min for \(shorter.silver)")
+                }
             }
         }
         return issues

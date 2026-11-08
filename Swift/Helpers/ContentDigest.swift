@@ -157,6 +157,10 @@ enum ContentDigest {
         // The Treasury (2026-10-11): what each entry does and what it costs in
         // zlatnyks. A price is a balance number like any other here.
         for item in TreasuryCatalog.items { digest.combine("treasury \(item.id):\(item.kind)@\(item.price)") }
+        // The wagon (2026-11-08): its places and every length's price, read
+        // through the façade the stable and the fit checks ask.
+        digest.combine("wagon \(WagonCatalog.capacity) road \(WagonCatalog.travelMinutes)")
+        for length in WagonCatalog.lengths { digest.combine("wagon \(length.minutes)m@\(length.silver)") }
         // The holidays (2026-10-29): when each runs, where its manor stands and
         // what fights in it at what price. The lines the creatures fight are
         // derived from the tuning and replayed in that half.

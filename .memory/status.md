@@ -21,6 +21,17 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-08 — the stable's wagon «🫏 Віз»** (Swift + content schema **v33** `stable.json` + uk/en + `CreateWagons`,
+COMMITTED, NOT LIVE; `spec-wagon.md`). The owner's ask (the horse parked): «🐎 Стайня» on Поділ hires a wagon for
+anything the warehouse takes (gear a copy at a time, with its state; not the class weapon — amended on the test bot the same
+evening, with the road at 3 min instead of 2 while it rides along, stamped on each trip: `AddTravelCrossing`, `AddWagonCargoGear`), 200 places, for 1 год / 3 год / 1 день / 7 днів at 100 / 190 / 670 / 2,160 🪙 (the longest the cheapest per minute;
+the validator holds it). It rides with the player on the road and in town and waits in the yard in the forest. In town every
+place that takes from the bag takes from it too — the trader, the Master's lesson and enchant, the fortune teller's tinctures, the
+jobs, the Базар, the guild's vault, a trade — the bag first, through `WagonService`; at home it trades with the warehouse alone and
+no estate service reads it; an ended hire sends its cargo to the warehouse up to the cap (the watchman), the rest waiting on it. The
+bag, the warehouse, the profile and the road card show «🫏 Віз: N/200»; `Countdown` prints days. 597 tests; the digest moves
+`records` alone.
+
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
 викинути 1? Повернути не вийде.» with a taken job's ⚠️; the yes, `drop1ok:<id>:<held>`, takes one unit only while the bag holds what
@@ -1182,8 +1193,12 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi since the 2026-11-01 09:56 restart (`b0c0d9c`): `records c2e645e984e10916`, content hash
-`6e734f14`, COMBINED `f613c07ef73b320b`, the other four lines as below. Before it, the Pi since
+rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline (its one home is `Prompt.md`; this is the trail) — the tree since 2026-11-08 (the wagon, schema **v33**, not
+deployed): `records 99f071177056cdc3`, content hash `e96dab98`, COMBINED `647107eb5b3754ab`, the other four lines unchanged. The
+Pi since the 2026-11-07 21:16 restart (`11d16bb`, schema v32): `records 0b18fadaface5fa8`, content hash `b6cb33a2`, COMBINED
+`c725c286799bc344`. Before it, the Pi since the 2026-11-05 13:28 restart (`46437bf`, schema v30): `records 4f4dcf860af8605f`,
+content hash `95421568`, COMBINED `d0b897ae80619502`. Before it, the Pi since the 2026-11-01 09:56 restart (`b0c0d9c`):
+`records c2e645e984e10916`, content hash `6e734f14`, COMBINED `f613c07ef73b320b`, the other four lines as below. Before it, the Pi since
 the 2026-10-31 17:56:45 restart (`c77a25b`, the 02:01 content; its digest names `artFrom`, read on the Pi 2026-11-01
 01:40): `records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`, the other four lines and the content hash `231acc72`
 as below. Before it, the Pi
@@ -1201,7 +1216,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **585 tests** (2026-11-07, the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **597 tests** (2026-11-08, the wagon; 585 at the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
 (2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

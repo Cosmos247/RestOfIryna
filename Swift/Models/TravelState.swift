@@ -35,6 +35,15 @@ final public class TravelState: Model, @unchecked Sendable {
     @Field(key: "ends_at")
     public var endsAt: Date
 
+    /// The whole crossing this trip was set out on, in wall-clock seconds —
+    /// 2 min on the road's own, 3 with a hired wagon (2026-11-08). Stamped at
+    /// the start and carried by every turn-back leg, so a hire that ends on the
+    /// way or a `/reload` never reshapes a trip in flight, and a turn-back is
+    /// measured against the road the player is actually on. Nil on a row from
+    /// before the stamp: the road's own crossing.
+    @OptionalField(key: "crossing_seconds")
+    public var crossingSeconds: Double?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -43,10 +52,11 @@ final public class TravelState: Model, @unchecked Sendable {
 
     public init() {}
 
-    public init(userID: UUID, destination: TravelDestination, endsAt: Date) {
+    public init(userID: UUID, destination: TravelDestination, endsAt: Date, crossingSeconds: Double? = nil) {
         self.$user.id = userID
         self.destinationRaw = destination.rawValue
         self.endsAt = endsAt
+        self.crossingSeconds = crossingSeconds
     }
 }
 
@@ -78,13 +88,14 @@ extension TravelState {
         for user: User,
         destination: TravelDestination,
         endsAt: Date,
+        crossingSeconds: Double? = nil,
         on db: any Database
     ) async throws -> TravelState {
         guard let userId = user.id else { throw FluentError.idRequired }
         if let existing = try await current(for: user, on: db) {
             try await existing.delete(on: db)
         }
-        let state = TravelState(userID: userId, destination: destination, endsAt: endsAt)
+        let state = TravelState(userID: userId, destination: destination, endsAt: endsAt, crossingSeconds: crossingSeconds)
         try await state.save(on: db)
         return state
     }

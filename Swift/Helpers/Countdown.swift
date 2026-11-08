@@ -28,17 +28,25 @@ import Lingo
 
 enum Countdown {
 
-    /// `2год 5хв` · `1хв 22сек` · `5хв` · `42сек`. The two most significant
-    /// units that carry a value, and an exact one drops its tail rather than
+    /// `6д 23год` · `2год 5хв` · `1хв 22сек` · `5хв` · `42сек`. The two most
+    /// significant units that carry a value, and an exact one drops its tail rather than
     /// printing `5хв 0сек` — which is what keeps the whole-minute callers (the
     /// five-minute invite window, the passive daily budget) clean. No leading
     /// zero anywhere: this is a sentence the player reads ("arrival in 1хв
     /// 22сек"), not a clock face they scan.
     static func format(_ seconds: Int, lingo: Lingo, locale: String) -> String {
         let clamped = max(0, seconds)
-        let hours = clamped / 3600
+        let days = clamped / 86_400
+        let hours = (clamped % 86_400) / 3600
         let minutes = (clamped % 3600) / 60
 
+        // Days arrived with the wagon's seven-day hire (2026-11-08), which
+        // would otherwise read «167год 59хв». No other countdown reaches a day:
+        // the longest, the fortune teller's next card, stays under it.
+        if days > 0 {
+            guard hours > 0 else { return "\(days)\(unit("days", lingo, locale))" }
+            return "\(days)\(unit("days", lingo, locale)) \(hours)\(unit("hours", lingo, locale))"
+        }
         if hours > 0 {
             // A whole hour drops the minutes rather than printing "1год 0хв",
             // which is what unpadded parts do to an exact value.

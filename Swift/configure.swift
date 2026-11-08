@@ -317,6 +317,14 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddSleepWard())
     // 2026-11-07: Міцна настоянка чебрецю — two columns, no rows touched.
     migrations.add(AddVigorThrift())
+    // 2026-11-08, `spec-wagon.md`: the wagon the stable hires out and its
+    // cargo — two new tables, no rows touched.
+    migrations.add(CreateWagons())
+    // 2026-11-08, the same day: the wagon's road is its own (`travel_state`
+    // stamps each trip's crossing — one nullable column) and it carries anything
+    // the warehouse takes (its cargo gains the gear columns). No rows rewritten.
+    migrations.add(AddTravelCrossing())
+    migrations.add(AddWagonCargoGear())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

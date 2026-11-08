@@ -574,7 +574,7 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
     func vaultMoveOrAsk(itemId: String, deposit: Bool, context: Context) async throws {
         let have: Int
         if deposit {
-            have = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
+            have = try await WagonService.townTotal(of: itemId, for: context.session, on: context.db)
         } else {
             have = try await GuildVaultEntry.totalQuantity(of: itemId, for: context.session.$guild.id ?? UUID(), on: context.db)
         }
@@ -604,7 +604,7 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
         let have: Int
         if deposit {
-            have = (try? await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)) ?? 0
+            have = (try? await WagonService.townTotal(of: itemId, for: context.session, on: context.db)) ?? 0
             return lingo.localize("guild.vault.deposit_qty_prompt", locale: locale, interpolations: ["item": itemName, "have": "\(have)"])
         } else {
             let guildId = context.session.$guild.id ?? UUID()
@@ -663,18 +663,24 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
             case .notInGuild:    await postStatusBanner("❌ \(lingo.localize("guild.err.not_in_guild", locale: locale))", context: context)
             case .notPermitted:  await postStatusBanner("❌ \(lingo.localize("guild.vault.err.cannot_withdraw", locale: locale))", context: context)
             case .notEnoughInVault(let have): await postStatusBanner("❌ \(lingo.localize("guild.vault.err.not_enough_vault", locale: locale, interpolations: ["have": "\(have)"]))", context: context)
-            case .bagFull(let free, let need): await postStatusBanner("❌ \(lingo.localize("guild.vault.err.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "\(need)"]))", context: context)
+            case .bagFull(let free, let need, let withWagon): await postStatusBanner("❌ \(lingo.localize(withWagon ? "guild.vault.err.bag_and_wagon_full" : "guild.vault.err.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "\(need)"]))", context: context)
             }
         }
     }
 
-    /// Stackable, non-equipped bag items grouped by id — the deposit candidates.
+    /// Stackable, non-equipped bag items grouped by id — the deposit candidates
+    /// — and what the hired wagon carries while it is in town (2026-11-08).
     private func stackableBagItems(context: Context) async throws -> [(itemId: String, qty: Int)] {
         let rows = try await InventoryEntry.list(for: context.session, on: context.db)
         var totals: [String: Int] = [:]
         for row in rows where row.equippedSlot == nil {
             guard let item = ItemCatalog.find(row.itemId), item.stackable else { continue }
             totals[row.itemId, default: 0] += row.quantity
+        }
+        if let userId = context.session.id, try await WagonService.inTown(for: context.session, on: context.db) {
+            for pile in try await WagonService.cargo(for: userId, on: context.db) {
+                totals[pile.itemId, default: 0] += pile.quantity
+            }
         }
         return totals.filter { $0.value > 0 }
             .map { (itemId: $0.key, qty: $0.value) }

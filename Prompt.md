@@ -15,7 +15,8 @@ snapshots, reading traps and a verified FAQ: `.memory/live-ops.md`.
 
 The pre-release rebalance is done and deployed (Phases 3–11). What is in flight is **fixing what
 playing the deployed build reveals**, plus the small features the play asks for — every defect so
-far came from someone PLAYING, none from a test. The newest work, live since 2026-11-07 21:16, is **every discard asked**, on the **fortune teller's
+far came from someone PLAYING, none from a test. The newest work, committed and NOT live, is **the stable's wagon «🫏 Віз»** (2026-11-08,
+`content/spec/spec-wagon.md`); before it, live since 2026-11-07 21:16, **every discard asked**, on the **fortune teller's
 tinctures**, on the kill trophies and the plants (`content/spec/spec-tinctures.md`). The premium currency is
 the zlatnyk («златник» 🟡), credited by the owner by hand in DBeaver and spent in the palace's
 Chancellery («🟡 Канцелярія», code `treasury`) on a class change. Gear work so far: durability as
@@ -28,13 +29,23 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 11-07 21:16 deploy record, and `11d16bb`'s hash fill), unpushed. Under it everything is pushed: `origin/main` = the Pi = **`11d16bb`** (the tinctures' button «🧪 Випити», and `ee5d45b`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill), unpushed. Under it, unpushed: **`5e781b2`** (the 11-07 21:16 deploy record, and `11d16bb`'s hash fill). Under them everything is pushed: `origin/main` = the Pi = **`11d16bb`** (the tinctures' button «🧪 Випити», and `ee5d45b`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`11d16bb`** (the owner pushed on the evening of 2026-11-07, seven commits past `46437bf`), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`11d16bb`**, online since **2026-11-07 21:16:11** (pm2 restarts 3; the binary built on the Pi in 147 s). Content schema **v32**, content hash **`b6cb33a2`**, COMBINED `c725c286799bc344` — the digest matched the Mac in all 72 lines before the restart; `AddSleepWard` and `AddVigorThrift` verified on the table (50 users, no NULL, no ward up, no hour running, 86 migrations). 12 × 403 per mass notice (players who blocked the bot; 11 on 11-01), still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. **The host rebooted itself 2026-11-04 ~17:57** (DNS late at boot, one failed start, pm2 brought the build up; `.memory/sessions.md` → the 11-05 deploy entry): the untracked `core` in the Pi's checkout is that boot's dump (124 MB), `pgweb/` is old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | Nothing: the tree and the Pi run the same code. Everything from `75eb348` to `11d16bb` went live at the 11-07 21:16:11 restart — the kill trophies and the plants (`spec-bestiary.md` §15–§16), the fortune teller's tinctures with `AddSleepWard` and `AddVigorThrift` (`spec-tinctures.md`), «зілля» retired, every discard asked, «🧪 Випити». Their four walk blocks in `TODO.md` stay open until someone plays them; a brew, a warded death and Міцна's costs had not run against the production database before it. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
+| waiting for a restart | **The stable's wagon «🫏 Віз»** (2026-11-08, `spec-wagon.md` — Swift + content schema **v33** `stable.json` + uk/en + `CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`, no row rewritten): content hash `e96dab98`, COMBINED `647107eb5b3754ab` — a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI`, NEVER a `/reload` first (the v32 binary refuses v33 content; Lingo is not reloaded); verify the three migrations on the tables. `TODO.md` → its walk block. Before it, everything from `75eb348` to `11d16bb` went live at the 11-07 21:16:11 restart — the kill trophies and the plants (`spec-bestiary.md` §15–§16), the fortune teller's tinctures with `AddSleepWard` and `AddVigorThrift` (`spec-tinctures.md`), «зілля» retired, every discard asked, «🧪 Випити». Their four walk blocks in `TODO.md` stay open until someone plays them; a brew, a warded death and Міцна's costs had not run against the production database before it. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
 
-### Where the last sessions stopped (2026-10-24 → 11-07)
+### Where the last sessions stopped (2026-10-24 → 11-08)
+
+**11-08 — the stable's wagon «🫏 Віз» (NOT live, schema v33).** The owner asked for a faster horse and a wagon to rent in the capital;
+after the first proposal the horse was parked («Поки зупинимось тільки на обозі»). Decided by quiz, a round at a time: the name «Віз» and
+the icon 🫏; 200 places, sized on a read-only live read the owner allowed; 1 год / 3 год / 1 день / 7 днів at 100 / 190 / 670 / 2160 🪙 (the
+owner named the start, 100; the longest the cheapest per minute, a validator rule); out of the forest; an ended hire's cargo to the warehouse
+by itself; every capital place that takes from the bag takes from the wagon (bag first); the stable on Поділ; at home unload first. The
+spec was signed off («Так») and built; on the test bot the same evening the owner added a 3-minute crossing with the wagon and «завантажувати
+у віз можна все» (gear a copy at a time with its state, never the class weapon). `content/spec/spec-wagon.md` (§3.7: what the build
+decided — above all, the bag's wagon list is read-only at home too); `TODO.md` → its walk block; `.memory/sessions.md` → the entry. The test
+bot ran it (`roi_test` holds all three migrations; `jj` 2004 🪙 with a hire to 17:44, «Ребекка» 1000 🪙) and is STOPPED.
 
 **11-07, late — the tinctures' button and the word (LIVE 11-07 21:16).** «🧪 Випити» / «🧪 Drink» on the bag's card; «відвар» was shown and the owner
 kept «настоянка» and «варить» («Нічого не міняти», auto-memory `feedback-potion-is-nastoyanka`). The testers' list is written.
@@ -182,8 +193,13 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — Walk what went live on 11-07 21:16.** `TODO.md`'s four top blocks, on the live game or the test bot (STOPPED, its last run 19:03; ask before
-starting it, the tunnel on 5433 is up; `jj` holds all five tinctures on `roi_test`, and its build predates the discard's question and «🧪 Випити»).
+**0 — Walk the wagon on the test bot, then deploy it.** `TODO.md`'s top block, on the test bot (STOPPED by the owner on 11-08 during the
+audit; ask before starting it, the tunnel on 5433 may need reopening; `roi_test` has the three migrations). «Ребекка» shows the purchase
+spilling onto the wagon — `jj`'s developer bag has no ceiling. The end of a hire: offer to move `wagons.ends_at` on `roi_test` to now.
+Then the deploy (below): v33 content and the binary together, the three migrations verified on the tables.
+
+**0b — Walk what went live on 11-07 21:16.** `TODO.md`'s four blocks under the wagon's, on the live game or the test bot (`jj` holds all five
+tinctures on `roi_test`).
 Міцна above all: nobody has read what a step costs under it. The testers' list is written (a private page with a copy button:
 https://claude.ai/artifact/RdfvcU1YykuRHtfNwiipQb); the owner publishes it.
 
@@ -263,7 +279,7 @@ and still open:
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake — **v32** on the Pi and in the tree —
+schema change ships `content/data` and the binary TOGETHER (the handshake — **v32** on the Pi, **v33** in the tree since the wagon —
 refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`. The Pi's
 binary is `11d16bb`'s (built 2026-11-07), and a change with no Swift needs no build there. Restart with
@@ -273,12 +289,14 @@ plain `pm2 restart ROI` (no `--update-env`).
 
 **The current baseline — on the Pi since 2026-11-07 21:16 (`11d16bb`, schema v32):** `records 0b18fadaface5fa8` ·
 `tuning 3f1b3b14b94825c9` · `spawns fcd0d9e62756e83c` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content
-hash `b6cb33a2` (COMBINED `c725c286799bc344`). **This is the one
+hash `b6cb33a2` (COMBINED `c725c286799bc344`). **The tree since the wagon (2026-11-08, schema v33, not deployed):** `records
+99f071177056cdc3`, the other four lines unchanged, content hash `e96dab98` (COMBINED `647107eb5b3754ab`) — what the Pi's pre-flight
+must print after the pull. **This is the one
 place the current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines — superseded", and the
 tree's steps in the Commit index.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
-`simulate --strict`, on the Pi's content and the tree alike: 18 of 18 invariance rows, 0 broken bands, 15 warnings, all deliberate
+`simulate --strict`, on the Pi's content and the tree alike (the wagon touches none of its inputs — `stable.json` and the schema number only): 18 of 18 invariance rows, 0 broken bands, 15 warnings, all deliberate
 (`TODO.md` → the standing deferrals; 18 until the hazel took `pace.levels_without_an_estate`). Pace to L40: **136–151 days** (151.1 /
 144.3 / 136.4; band 72–200; taps/day ~801; it read 151–167 until the hazel). It sees no tincture. The pace cannot see depth: the expedition model puts real
 play at ~600–640 days (auto-memory `project-expedition-model`, `.memory/rebalance.md`).
@@ -289,9 +307,9 @@ play at ~600–640 days (auto-memory `project-expedition-model`, `.memory/rebala
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
-swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king · tinctures
+swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king · tinctures · wagon · events
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 585 tests, ~5s
+swift test                                   # 597 tests, ~5s
 ```
 
 

@@ -92,12 +92,13 @@ enum RecipeNoteDisplay {
     /// the player's next plot (`PlotService.nextPlotNumber`), which a plot note
     /// is priced at; the caller reads it only when such a note is open.
     static func screen(notes: [RecipeNote], user: User, stock: [String: CraftingService.StockLine],
+                       wagon: [String: Int] = [:],
                        plotNumber: Int, lingo: Lingo, locale: String) -> (text: String, keyboard: TGInlineKeyboardMarkup) {
         var blocks: [String] = []
         var removeButtons: [TGInlineKeyboardButton] = []
         for note in notes {
-            guard let id = note.id, let entry = entry(note, user: user, stock: stock, plotNumber: plotNumber,
-                                                      lingo: lingo, locale: locale) else { continue }
+            guard let id = note.id, let entry = entry(note, user: user, stock: stock, wagon: wagon,
+                                                      plotNumber: plotNumber, lingo: lingo, locale: locale) else { continue }
             blocks.append(entry.lines.joined(separator: "\n"))
             removeButtons.append(TGInlineKeyboardButton(text: "❌ " + entry.removeLabel, callbackData: "notes:del:\(id.uuidString)"))
         }
@@ -115,15 +116,17 @@ enum RecipeNoteDisplay {
     /// One note as the screen prints it, or nil when it can no longer be priced
     /// — which `RecipeNoteService.live` has already dropped by the time this runs.
     static func entry(_ note: RecipeNote, user: User, stock: [String: CraftingService.StockLine],
+                      wagon: [String: Int] = [:],
                       plotNumber: Int, lingo: Lingo, locale: String) -> Entry? {
         guard let kind = note.kind else { return nil }
         let master = lingo.localize("notes.place.master", locale: locale)
         let workshop = lingo.localize("notes.place.workshop", locale: locale)
         let arrow = lingo.localize("weapon.upgrade.delta_arrow", locale: locale)
         // Where each place draws from: the estate's rooms from bag + warehouse,
-        // the Master from the bag alone.
+        // the capital's from the bag and the hired wagon that rides there
+        // (2026-11-08; `wagon` is empty unless a hire runs).
         func held(_ itemId: String) -> Int { stock[itemId]?.total ?? 0 }
-        func inBag(_ itemId: String) -> Int { stock[itemId]?.bag ?? 0 }
+        func inBag(_ itemId: String) -> Int { (stock[itemId]?.bag ?? 0) + (wagon[itemId] ?? 0) }
         func title(_ text: String, place: String? = nil) -> String {
             "<b>\(text)</b>" + (place.map { " · \($0)" } ?? "")
         }
@@ -196,8 +199,8 @@ enum RecipeNoteDisplay {
             return Entry(lines: lines, removeLabel: name)
 
         case .tincture:
-            // Read like a recipe, and counted like her card: the bag alone, then
-            // her fee (2026-11-07).
+            // Read like a recipe, and counted like her card: the bag and the
+            // hired wagon, then her fee (2026-11-07; the wagon 2026-11-08).
             guard let recipe = TinctureService.find(note.ref),
                   let output = ItemCatalog.find(recipe.output.itemId) else { return nil }
             let name = lingo.localize(output.nameKey, locale: locale)

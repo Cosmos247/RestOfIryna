@@ -2161,6 +2161,29 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-08 — the stable's wagon «🫏 Віз» (COMMITTED, NOT LIVE; Swift + content schema v33 `stable.json` + uk/en + `CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`). `content/spec/spec-wagon.md`. `swift test` reaches the arithmetic and the validator only — none of the screens, the hire, the moves, the capital's second store or the end of a hire — so this block is the only proof:**
+- [ ] Поділ shows a third row «🐎 Стайня»; the stable reads the carter's line, «🫏 Віз — 200 місць під матеріали…» and four buttons
+      «🫏 1 год · 100 🪙» «🫏 3 год · 190 🪙» / «🫏 1 день · 670 🪙» «🫏 7 днів · 2160 🪙», then «🔙 До столиці».
+- [ ] A length asks «🫏 Найняти віз на 1 год за 100 срібників?», the terms and «✅ 🪙 Срібло (have/100)»; «❌ Ні» returns; «✅ Найняти»
+      takes 100 🪙, redraws «🫏 Віз ваш ще 59хв · на возі 0/200» and posts «🫏 Віз найнято на 1 год · −100 🪙». Short of silver: the modal.
+- [ ] Hired again while it runs: the buttons read «🫏 +1 год · …», the question «…ще на 1 год…», and the time adds to the end.
+- [ ] Road home and back: «🫏 Позаду торохтить віз: N/200.» under every road card (setting out, «скільки лишилось», a turn-back);
+      the crossing reads «Прибуття за 3хв» while the hire runs (2хв without one); a turn-back after a minute comes back in a minute.
+- [ ] Anything the warehouse takes goes on the wagon: food and tinctures through a card like materials; a piece of gear as its own
+      button «⬆️ 🫏 🦺 … +1 40/50» / «⬇️ 📦 …», and it comes back as worn and as enchanted as it went; the class weapon never shows.
+- [ ] Home → 🏠 Дім → 📦 Склад: «🫏 Віз: 0/200 · ще …» and «🫏 Віз (0/200)»; its list «🪵 … · 📦 N / 🫏 M»; a card loads with «⬆️ 🫏 1» /
+      «Усі (N)» / «✏️» and unloads with «⬇️ 📦 1» / «Усі» / «✏️»; a load past 200 says what stayed; «📦 Розвантажити все» with a full warehouse.
+- [ ] In town: the trader's rows read «· 🎒 4 · 🫏 100 · 🪙 2»; a sale takes the bag first; «Скільки … купити? (у 🎒 вільно N · у 🫏 вільно M)»;
+      a purchase past the bag lands on the wagon; past both, «Сумка й віз повні…».
+- [ ] In town: the Master's enchant and lesson cards, the fortune teller's tincture card and a delivery job count bag + wagon and take the
+      bag first; the Базар's sell list and the guild vault's deposit list include the wagon's materials; a trade offers them.
+- [ ] The bag: «🫏 Віз: N/200» under the header and «🫏 Віз (N/200)» opening a read-only list; the profile's «🫏 Віз: N/200 · ще …».
+- [ ] The forest: the wagon stays home — a death leaves it whole; the warehouse's wagon buttons refuse while the walk or the 🏕 run lasts.
+- [ ] The end of a hire (hire 1 год and wait, or shorten `ends_at` on `roi_test`): «🫏 Оренда воза скінчилась. Візник відвіз на склад N
+      одиниць.», with a full warehouse «… N не вмістились — лежать на возі…»; the remainder moves in once room is made; the wagon
+      no longer travels or loads; «🫏 Віз: N/200 · оренда скінчилась» on the warehouse and the profile; hiring again takes the same wagon.
+- [ ] `/content` on the Pi reads schema v33 after the deploy, and `CreateWagons` made both tables (verify on the table).
+
 **Added 2026-11-07 — every discard is asked (LIVE since the 2026-11-07 21:16 restart — Swift + uk/en, no migration, the digest unchanged). The players' ask, the owner's pick: every item, both bags. `swift test` does not reach `BagCard`,
 so this block is the only proof:**
 - [ ] A stack of 6: «🗑 Викинути 1» → «🥔 Картопля — викинути 1? Повернути не вийде.», nothing gone yet; «🔙 Назад» → the card, still
@@ -3465,6 +3488,16 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-11-08 session (the wagon):**
+- **The horse is parked** («Поки зупинимось тільки на обозі»): a faster horse hired at the same stable, first proposed as 1 min
+  instead of 2 for 3 hours. A trip already stamps its own crossing (`travel_state.crossing_seconds`, built for the wagon's 3 min), so a
+  horse is a second source for that stamp — and a rule for a horse and a wagon together, which nobody has decided.
+- **Gear on the wagon is read by no place in town** (the build's own limit, spec §3.4): the Master's repair and enchant and a trade's
+  gear name the bag's rows. Offer, if a player asks, the Master reading wagon copies too.
+- **The capital's other puts stay bag-only**: the Master's armour shop, the tavern's dishes, the fortune teller's brew and the King's
+  food reward add to the bag alone — the spec listed the trader, the Базар, the guild vault and a trade as the places that spill onto
+  the wagon, and the owner's «можна все» was about loading.
 
 **From the 2026-11-07 session:**
 - **The plants thinned the Fool's +20% loot** — found while pricing the tinctures, not decided. `lootChanceMultiplier` takes

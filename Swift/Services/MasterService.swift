@@ -123,7 +123,8 @@ public enum MasterService {
     // MARK: - Enchant
 
     /// Raise an armour piece one level up the enchant ladder for silver +
-    /// material, from the BAG alone.
+    /// material, from the BAG — and, while it is in town, the hired wagon
+    /// (2026-11-08, `spec-wagon.md` §3.4): the bag first, the wagon for the rest.
     ///
     /// The enchant is the armour's ladder since 2026-10-06 (`spec-items.md`
     /// §11), and its price is its only gate: there is no player-level check
@@ -134,7 +135,7 @@ public enum MasterService {
     /// the estate's warehouse too and drew from it remotely, so a player with
     /// 0 hides in the bag was told «маєте 14» and could not tell where they were.
     public static func enchant(entryId: UUID, for user: User, on db: any Database) async throws -> EnchantResult {
-        guard let userId = user.id else { return .notArmor }
+        guard user.id != nil else { return .notArmor }
         guard let row = try await ownedRow(entryId, for: user, on: db), isArmor(row.itemId) else {
             return .notArmor
         }
@@ -143,11 +144,16 @@ public enum MasterService {
         }
         if user.silver < step.silver { return .notEnoughSilver(have: user.silver, need: step.silver) }
 
-        let inBag = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: db)
-        if inBag < step.materialQty {
-            return .missingMaterials(itemId: step.materialId, have: inBag, need: step.materialQty)
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        let stock = try await WagonService.townStock(of: step.materialId, for: user, on: db)
+        let have = stock.bag + stock.wagon
+        if have < step.materialQty {
+            return .missingMaterials(itemId: step.materialId, have: have, need: step.materialQty)
         }
-        _ = try await InventoryEntry.remove(step.materialId, quantity: step.materialQty, from: user, on: db)
+        guard try await WagonService.take(step.materialId, quantity: step.materialQty, from: user,
+                                          wagonInTown: wagonInTown, on: db) else {
+            return .missingMaterials(itemId: step.materialId, have: have, need: step.materialQty)
+        }
 
         let before = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
         user.silver -= step.silver

@@ -305,11 +305,15 @@ public enum QuestService {
         }
     }
 
+    /// The bag, and a hired wagon's cargo while its hire runs (2026-11-08,
+    /// `spec-wagon.md` §3.4): the wagon rides to the NPC with the player, so the
+    /// board, the watchman's «ready» and the turn-in count one number.
     private static func carried(_ itemIds: [String], user: User, on db: any Database) async throws -> Int {
         guard let userId = user.id else { return 0 }
         var total = 0
         for itemId in itemIds {
             total += try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+            total += try await WagonService.runningQuantity(of: itemId, for: user, on: db)
         }
         return total
     }
@@ -449,13 +453,19 @@ public enum QuestService {
 
             // Drain in catalog order — for the "cooked dish ×3" job that means
             // roasted meat goes before stew, spending the cheaper dish first.
+            // Each item from the bag first and the wagon in town for the rest.
             var remaining = count
+            let wagonInTown = try await WagonService.inTown(for: user, on: db)
             for itemId in itemIds {
                 guard remaining > 0, let userId = user.id else { break }
-                let onHand = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+                var onHand = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+                if wagonInTown, WagonService.carries(itemId) {
+                    onHand += try await WagonService.quantity(of: itemId, for: userId, on: db)
+                }
                 let take = min(onHand, remaining)
                 guard take > 0 else { continue }
-                let removed = try await InventoryEntry.remove(itemId, quantity: take, from: user, on: db)
+                let removed = try await WagonService.take(itemId, quantity: take, from: user,
+                                                          wagonInTown: wagonInTown, on: db)
                 if removed { remaining -= take }
             }
             guard remaining == 0 else {

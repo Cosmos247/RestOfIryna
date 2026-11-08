@@ -110,7 +110,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   endpoint, and a turn-back row is created mid-road, so a second turn-back priced a
   two-minute road at five seconds (fixed 2026-09-11). Turns are
   symmetric — each costs only its own leg, so oscillating converges rather than compounds.
-- **The road costs no Vigor** — only time (2 real minutes, `tuning/time.json` → `travelMinutes`),
+- **The road costs no Vigor** — only time (2 real minutes, `tuning/time.json` → `travelMinutes`; 3 while a
+  hired wagon rides along, `stable.json` → `travelMinutes`, 2026-11-08 — each trip stamps its own crossing in
+  `travel_state.crossing_seconds`, and the turn-back below reads that, not the global two),
   and since 2026-10-08 `TravelService.start` refuses only a player at 0 HP. The 0-Vigor refusal
   dated from May, when Vigor still refilled itself; after Phase 8E it kept a starving player from
   the capital, where food is sold and jobs and decrees pay Vigor (seen live on the public test's

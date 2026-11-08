@@ -267,17 +267,22 @@ public enum GuildService {
     /// Move `quantity` of a stackable item from the depositor's bag into the
     /// shared vault. Any member may deposit. Validate (stackable, owned, cap),
     /// then mutate. Gear is excluded — the vault row carries no enchant/durability.
+    /// The hired wagon in town (2026-11-08) is the bag's second store: the bag
+    /// first, the wagon for the rest.
     public static func depositToVault(itemId: String, quantity: Int, by user: User, on db: any Database) async throws -> DepositResult {
-        guard let guildId = user.$guild.id, let userId = user.id else { return .notInGuild }
+        guard let guildId = user.$guild.id, user.id != nil else { return .notInGuild }
         guard quantity > 0, let item = ItemCatalog.find(itemId), item.stackable else { return .notStackable }
 
-        let inBag = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        let inBag = try await WagonService.townTotal(of: itemId, for: user, on: db)
         if inBag < quantity { return .notEnoughInBag(have: inBag) }
 
         let free = GuildCatalog.vaultUnitCap - (try await GuildVaultEntry.totalUnits(for: guildId, on: db))
         if quantity > free { return .vaultFull(free: max(0, free)) }
 
-        let removed = try await InventoryEntry.remove(itemId, quantity: quantity, from: user, on: db)
+        let removed = try await db.transaction { tx in
+            try await WagonService.take(itemId, quantity: quantity, from: user, wagonInTown: wagonInTown, on: tx)
+        }
         guard removed else { return .notEnoughInBag(have: inBag) }
         try await GuildVaultEntry.add(itemId, quantity: quantity, to: guildId, on: db)
         return .deposited(itemId: itemId, quantity: quantity)
@@ -288,7 +293,8 @@ public enum GuildService {
         case notInGuild
         case notPermitted
         case notEnoughInVault(have: Int)
-        case bagFull(free: Int, need: Int)
+        /// `withWagon`: the hired wagon in town was counted too (2026-11-08).
+        case bagFull(free: Int, need: Int, withWagon: Bool)
     }
 
     /// Move `quantity` of an item from the vault into the withdrawer's bag.
@@ -302,16 +308,19 @@ public enum GuildService {
         let inVault = try await GuildVaultEntry.totalQuantity(of: itemId, for: guildId, on: db)
         if inVault < quantity { return .notEnoughInVault(have: inVault) }
 
-        let canFit = try await InventoryEntry.canAccept(itemId, quantity: quantity, for: user, on: db)
-        if !canFit {
-            let used = try await InventoryEntry.slotsUsed(for: user, on: db)
-            let cap = InventoryEntry.slotCap(for: user)
-            return .bagFull(free: max(0, cap - used), need: quantity)
+        // The bag first, the hired wagon in town for the rest (2026-11-08).
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        guard try await WagonService.plan(put: itemId, quantity: quantity, to: user, wagonInTown: wagonInTown, on: db) != nil else {
+            let room = try await WagonService.room(for: itemId, user: user, wagonInTown: wagonInTown, on: db)
+            return .bagFull(free: room.bagFree + room.wagonFree, need: quantity,
+                            withWagon: wagonInTown && WagonService.carries(itemId))
         }
 
         let removed = try await GuildVaultEntry.remove(itemId, quantity: quantity, from: guildId, on: db)
         guard removed else { return .notEnoughInVault(have: inVault) }
-        try await InventoryEntry.add(itemId, quantity: quantity, to: user, on: db)
+        try await db.transaction { tx in
+            _ = try await WagonService.put(itemId, quantity: quantity, to: user, wagonInTown: wagonInTown, on: tx)
+        }
         return .withdrawn(itemId: itemId, quantity: quantity)
     }
 

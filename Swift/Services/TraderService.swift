@@ -10,6 +10,11 @@
 //  convenience wrapper. Atomic preflight on both silver AND slot space so
 //  a failed buy never half-applies.
 //
+//  The hired wagon (2026-11-08, `spec-wagon.md` §3.4) is the bag's second
+//  store here: a sale takes from the bag first and the wagon for the rest, a
+//  purchase fills the bag first and the wagon with the rest — all or nothing,
+//  through `WagonService`, and only while the wagon is in town with the player.
+//
 //  Post-v2-economy (2026-05-17) all `TraderListing.*PacketQty` values
 //  are 1, so per-unit silver = listing.sellPacketSilver (or buyPacketSilver).
 //  The math here multiplies through for arbitrary N — silver-per-unit ×
@@ -45,16 +50,20 @@ public enum TraderService {
     public static func sell(itemId: String, quantity: Int, for user: User, on db: any Database) async throws -> SellResult {
         guard quantity > 0 else { return .notEnoughInBag(have: 0, need: max(1, quantity)) }
         guard let listing = TraderCatalog.find(itemId) else { return .unknownListing }
-        guard let userId = user.id else { return .unknownListing }
+        guard user.id != nil else { return .unknownListing }
 
-        let inBag = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
-        if inBag < quantity {
-            return .notEnoughInBag(have: inBag, need: quantity)
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        let stock = try await WagonService.townStock(of: itemId, for: user, on: db)
+        let have = stock.bag + stock.wagon
+        if have < quantity {
+            return .notEnoughInBag(have: have, need: quantity)
         }
 
-        let removed = try await InventoryEntry.remove(itemId, quantity: quantity, from: user, on: db)
+        let removed = try await db.transaction { tx in
+            try await WagonService.take(itemId, quantity: quantity, from: user, wagonInTown: wagonInTown, on: tx)
+        }
         guard removed else {
-            return .notEnoughInBag(have: inBag, need: quantity)
+            return .notEnoughInBag(have: have, need: quantity)
         }
 
         let totalSilver = quantity * listing.sellPacketSilver
@@ -81,16 +90,22 @@ public enum TraderService {
             return .notEnoughSilver(have: user.silver, need: totalSilver)
         }
 
-        let canFit = try await InventoryEntry.canAccept(itemId, quantity: quantity, for: user, on: db)
-        if !canFit {
-            // The number «(у 🎒 вільно N)» quoted in the question (2026-11-04).
-            let free = try await InventoryEntry.freeSlots(for: user, on: db)
-            return .inventoryFull(free: free, need: quantity)
+        // The bag first, the wagon for the rest when it is in town (2026-11-08):
+        // the same arithmetic `WagonService.put` writes with, so the refusal and
+        // the write cannot disagree.
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        guard try await WagonService.plan(put: itemId, quantity: quantity, to: user, wagonInTown: wagonInTown, on: db) != nil else {
+            // The number «(у 🎒 вільно N)» quoted in the question (2026-11-04),
+            // and the wagon's free places beside it while it carries the item.
+            let room = try await WagonService.room(for: itemId, user: user, wagonInTown: wagonInTown, on: db)
+            return .inventoryFull(free: room.bagFree + room.wagonFree, need: quantity)
         }
 
         user.silver -= totalSilver
         try await user.saveAndCache(in: db)
-        try await InventoryEntry.add(listing.itemId, quantity: quantity, to: user, on: db)
+        try await db.transaction { tx in
+            _ = try await WagonService.put(listing.itemId, quantity: quantity, to: user, wagonInTown: wagonInTown, on: tx)
+        }
         return .success(itemId: itemId, boughtQty: quantity, silverSpent: totalSilver)
     }
 }

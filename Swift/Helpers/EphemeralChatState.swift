@@ -47,7 +47,9 @@ public actor EphemeralChatState {
     // either stage — clear the entry and delete the prompt.
 
     public struct PendingWarehouseTransfer: Sendable {
-        public enum Direction: String, Sendable { case put, take }
+        /// `put` / `take` move between the bag and the warehouse; `load` /
+        /// `unload` between the warehouse and the wagon (2026-11-08).
+        public enum Direction: String, Sendable { case put, take, load, unload }
         public let itemId: String
         public let promptMessageId: Int
         public let warehouseMessageId: Int

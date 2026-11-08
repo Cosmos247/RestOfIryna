@@ -350,7 +350,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Warehouse views
 
-    fileprivate func renderWarehouseRoot(slotsUsed: Int, slotsCap: Int, lingo: Lingo, locale: String) -> String {
+    func renderWarehouseRoot(slotsUsed: Int, slotsCap: Int, lingo: Lingo, locale: String) -> String {
         let title = lingo.localize("estate.warehouse", locale: locale)
         let description = lingo.localize("estate.warehouse.description", locale: locale)
         // Phase 5.3c — show capacity. Cap grows with estate tier; existing
@@ -367,7 +367,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
 
     /// Category grid mirroring the inventory's root layout — all five ItemType
     /// categories, each a button with a live count of what's in the warehouse.
-    fileprivate func warehouseRootKeyboard(entries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    func warehouseRootKeyboard(entries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var countsByType: [ItemType: Int] = [:]
         for entry in entries {
             guard let item = ItemCatalog.find(entry.itemId) else { continue }
@@ -1182,7 +1182,7 @@ extension EstateController {
         // from the forest is a find a death cannot take. The estate's door
         // refuses while an expedition row stands, so its warehouse does too.
         // Only the typed prompt's Cancel stays open, to close what is open.
-        if data.hasPrefix("estate:wh:"), data != "estate:wh:cancelN",
+        if data.hasPrefix("estate:wh:") || data.hasPrefix("estate:wg:"), data != "estate:wh:cancelN",
            try await ExplorationState.current(for: context.session, on: context.db) != nil {
             let notice = context.lingo.localize("estate.blocked_by_expedition", gender: context.session.gender, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
@@ -1195,6 +1195,10 @@ extension EstateController {
         // «🛡 Одягнути» live.
         if data.hasPrefix("estate:wh:info:") {
             return try await handleWarehouseCard(data: data, query: query, message: message, context: context)
+        }
+        // The wagon in the yard (2026-11-08, `spec-wagon.md` §3.3).
+        if data.hasPrefix("estate:wg:") {
+            return try await handleWagonCallback(data: data, query: query, message: message, context: context)
         }
         if data.hasPrefix("estate:wh:put1:") || data.hasPrefix("estate:wh:putall:")
             || data.hasPrefix("estate:wh:take1:") || data.hasPrefix("estate:wh:takeall:") {
@@ -1317,12 +1321,11 @@ extension EstateController {
                 text = ctrl.renderKitchen(learnedKitchenCount: availableKitchen, lingo: context.lingo, locale: locale)
                 inline = ctrl.kitchenKeyboard(learnedRecipeIds: availableIds, lingo: context.lingo, locale: locale)
             case "estate:home:warehouse":
-                let entries = try await WarehouseEntry.list(for: context.session, on: context.db)
-                let cap = WarehouseService.capForLevel(context.session.estateLevel)
-                // Per-unit (2026-05-12): sum quantities, not row count.
-                let usedUnits = entries.reduce(0) { $0 + $1.quantity }
-                text = ctrl.renderWarehouseRoot(slotsUsed: usedUnits, slotsCap: cap, lingo: context.lingo, locale: locale)
-                inline = ctrl.warehouseRootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+                // Per-unit (2026-05-12): sums quantities, not rows — and names
+                // the wagon in the yard (2026-11-08) while there is one.
+                let root = try await Self.warehouseRootScreen(context: context)
+                text = root.text
+                inline = root.markup
             default:
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
@@ -2142,8 +2145,15 @@ extension EstateController {
         let telegramId = context.session.telegramId
         let chatId = TGChatId.chat(telegramId)
         let itemName = context.lingo.localize(item.nameKey, locale: locale)
+        if direction == .load || direction == .unload {
+            try await finishWagonTransferN(pending: pending, loading: direction == .load, item: item,
+                                           quantity: parsed, context: context)
+            return
+        }
         let banner: String
         switch direction {
+        case .load, .unload:
+            return
         case .take:
             let result = try await WarehouseService.withdrawN(
                 itemId: pending.itemId,

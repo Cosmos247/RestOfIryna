@@ -79,6 +79,12 @@ final class DomainContent: Sendable {
     let trainingGroundLevels: [TrainingGroundLevelDTO]
     /// The Treasury's goods for zlatnyks, in list order (`treasury.json`).
     let treasuryItems: [TreasuryItemDTO]
+    /// The wagon the stable hires out (`stable.json`): its places for
+    /// materials and its lengths, shortest first. A bundle without the file —
+    /// only ever a hand-built fixture — offers no wagon: 0 places, no length.
+    let wagonCapacity: Int
+    let wagonTravelMinutes: Int
+    let wagonLengths: [WagonLengthDTO]
     /// The holidays, their creatures solved at every level (`events.json`).
     let events: [GameEvent]
 
@@ -271,6 +277,9 @@ final class DomainContent: Sendable {
         self.kingDecrees = content.kingDecrees
         self.trainingGroundLevels = content.trainingGroundLevels
         self.treasuryItems = content.treasuryItems
+        self.wagonCapacity = content.wagon?.capacity ?? 0
+        self.wagonTravelMinutes = content.wagon?.travelMinutes ?? content.tuning?.time.gameTime.travelMinutes ?? 0
+        self.wagonLengths = content.wagon?.lengths ?? []
         self.events = try content.events.map {
             try GameEvent(dto: $0, archetypes: content.enemyArchetypes, tuning: tuning, budget: budget,
                           rarities: content.rarities)

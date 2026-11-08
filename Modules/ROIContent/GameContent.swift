@@ -65,6 +65,9 @@ public final class GameContent: Sendable {
     public let trainingGroundLevels: [TrainingGroundLevelDTO]
     /// The Treasury's goods, in the order it lists them.
     public let treasuryItems: [TreasuryItemDTO]
+    /// The wagon the stable hires out (`stable.json`). Nil only in a
+    /// hand-built fixture; the bot then offers no wagon.
+    public let wagon: WagonDTO?
     /// The holidays, in file order (`events.json`).
     public let events: [EventDTO]
     public let tuning: TuningBundleDTO?
@@ -106,6 +109,7 @@ public final class GameContent: Sendable {
         self.kingDecrees = bundle.king?.decrees ?? []
         self.trainingGroundLevels = (bundle.trainingGround?.levels ?? []).sorted { $0.level < $1.level }
         self.treasuryItems = bundle.treasury?.items ?? []
+        self.wagon = bundle.stable?.wagon
         self.events = bundle.events?.events ?? []
         self.tuning = bundle.tuning
     }

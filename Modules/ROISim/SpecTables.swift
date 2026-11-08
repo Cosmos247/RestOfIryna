@@ -367,6 +367,36 @@ public enum SpecTables {
         return out.joined(separator: "\n")
     }
 
+    /// The wagon the stable hires out (`stable.json`, `spec-wagon.md` §2): each
+    /// length with its price per hour and per minute, so the owner's rule — the
+    /// longest is the cheapest per minute — reads off the table, and the
+    /// capacity beside the largest bag it must beat.
+    public static func wagon(content: GameContent) -> String {
+        guard let wagon = content.wagon else { return "" }
+        let largestBag = content.bags.capacities.max() ?? 0
+        var out = ["| length | minutes | silver | per hour | per minute |", "|---|---|---|---|---|"]
+        for length in wagon.lengths {
+            let hours = Double(length.minutes) / 60
+            out.append(String(format: "| %@ | %d | %d | %.1f | %.3f |", lengthLabel(length.minutes),
+                              length.minutes, length.silver,
+                              Double(length.silver) / hours, Double(length.silver) / Double(length.minutes)))
+        }
+        out.append("")
+        out.append("Capacity **\(wagon.capacity)** places for anything the warehouse takes; the largest bag holds \(largestBag).")
+        if let road = content.tuning?.time.gameTime.travelMinutes {
+            out.append("A crossing with the wagon: **\(wagon.travelMinutes) min** (\(road) min without it).")
+        }
+        return out.joined(separator: "\n")
+    }
+
+    /// `1 h`, `3 h`, `1 d`, `7 d`, `90 min` — the table's own words, not the
+    /// game's (the bot prints its lengths through Lingo).
+    private static func lengthLabel(_ minutes: Int) -> String {
+        if minutes % 1440 == 0 { return "\(minutes / 1440) d" }
+        if minutes % 60 == 0 { return "\(minutes / 60) h" }
+        return "\(minutes) min"
+    }
+
     public static func king(content: GameContent) -> String {
         guard let tuning = content.tuning else { return "" }
         let pool = tuning.progression.vigorPool
@@ -883,6 +913,9 @@ public enum SpecTables {
                 out.append("| the fortune teller's tinctures | \(low)–\(high) | per tincture, the plants and the trophy on top |")
             }
             out.append("| the fortune teller's card | \(f.drawPrice) | at most one a game day; a dispel \(f.dispelPrice), then one final second card \(f.secondDrawPrice) |")
+        }
+        if let w = content.wagon, let low = w.lengths.map(\.silver).min(), let high = w.lengths.map(\.silver).max() {
+            out.append("| the stable's wagon | \(low)–\(high) | per hire, \(w.lengths.count) lengths (`spec wagon`) |")
         }
 
         if let q = content.quests, let tuning = content.tuning {

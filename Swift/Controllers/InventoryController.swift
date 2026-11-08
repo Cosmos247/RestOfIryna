@@ -153,8 +153,9 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
         let locked = try await Self.passiveRun(holding: context.session, on: context.db) != nil
         let text = renderRoot(entries: entries, session: context.session, lingo: context.lingo,
-                              locale: context.session.locale, locked: locked)
-        let inline = rootKeyboard(entries: entries, lingo: context.lingo, locale: context.session.locale)
+                              locale: context.session.locale, locked: locked,
+                              wagon: try await WagonService.status(for: context.session, on: context.db))
+        let inline = rootKeyboard(entries: entries, lingo: context.lingo, locale: context.session.locale, wagon: try await WagonService.status(for: context.session, on: context.db))
         try await context.bot.sendMessage(
             session: context.session,
             text: text,
@@ -199,7 +200,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     // MARK: - Rendering
 
     fileprivate func renderRoot(entries: [InventoryEntry], session: User, lingo: Lingo, locale: String,
-                                locked: Bool = false) -> String {
+                                locked: Bool = false, wagon: WagonService.Status? = nil) -> String {
         let title = lingo.localize("inventory.title", locale: locale)
         // Per-unit (2026-05-12): sum quantities across all non-equipped rows.
         let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
@@ -211,6 +212,13 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             "free": "\(InventoryEntry.freeSlots(used: slotsUsed, for: session))"
         ])
         var header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel) (\(free))</i>"
+        // The hired wagon under the bag (2026-11-08, `spec-wagon.md` §4):
+        // «🫏 Віз: 150/200», its list one button away.
+        if let wagon {
+            header += "\n\(WagonDisplay.icon) " + lingo.localize("wagon.status.line", locale: locale, interpolations: [
+                "used": "\(wagon.used)", "cap": "\(wagon.capacity)"
+            ])
+        }
         // Said on the screen before a tap is refused (`passiveRun(holding:)`).
         if locked {
             header += "\n\n🏕 " + lingo.localize("exploration.passive.bag_locked", gender: session.gender, locale: locale)
@@ -221,7 +229,8 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         return "\(header)\n\n" + lingo.localize("inventory.choose_category", locale: locale)
     }
 
-    fileprivate func rootKeyboard(entries: [InventoryEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func rootKeyboard(entries: [InventoryEntry], lingo: Lingo, locale: String,
+                                  wagon: WagonService.Status? = nil) -> TGInlineKeyboardMarkup {
         var countsByType: [ItemType: Int] = [:]
         for entry in entries {
             guard let item = ItemCatalog.find(entry.itemId) else { continue }
@@ -245,6 +254,10 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             }
         }
         if !currentRow.isEmpty { rows.append(currentRow) }
+        if let wagon {
+            rows.append([TGInlineKeyboardButton(text: WagonDisplay.button(wagon, lingo: lingo, locale: locale),
+                                                callbackData: "inv:wagon")])
+        }
 
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
@@ -395,13 +408,24 @@ extension InventoryController {
         let ctrl = Controllers.inventoryController
         let locale = context.session.locale
 
+        // The hired wagon's cargo (2026-11-08, `spec-wagon.md` §3.4): a view
+        // from the bag, at home and in town alike — the moves live at the
+        // warehouse, whose buttons only the estate's router answers.
+        if data == "inv:wagon" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let screen = try await wagonView(context: context)
+            await editScreen(message, text: screen.text, replyMarkup: screen.markup, bot: context.bot)
+            return true
+        }
+
         // Back to root
         if data == "inv:root" {
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
             let locked = try await passiveRun(holding: context.session, on: context.db) != nil
             let text = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo,
-                                       locale: locale, locked: locked)
-            let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+                                       locale: locale, locked: locked,
+                                       wagon: try await WagonService.status(for: context.session, on: context.db))
+            let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db))
             await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
@@ -550,8 +574,8 @@ extension InventoryController {
                 refreshedBody = ctrl.renderCategory(type: item.type, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.categoryKeyboard(type: item.type, entries: entries, lingo: context.lingo, locale: locale)
             } else {
-                refreshedBody = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
-                refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+                refreshedBody = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db))
+                refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db))
             }
             await editScreen(message, text: refreshedBody, replyMarkup: refreshedInline, bot: context.bot)
             await ctrl.postStatusBanner(statusLine, context: context)
@@ -743,8 +767,8 @@ extension InventoryController {
         if stillInCategory {
             try await refreshCategory(type: .artifact, message: message, context: context, statusLine: statusLine)
         } else {
-            let body = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
-            let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+            let body = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db))
+            let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db))
             await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
             await ctrl.postStatusBanner(statusLine, context: context)
         }
@@ -795,6 +819,40 @@ extension InventoryController {
         }
     }
 
+    /// The wagon's cargo as a list to read: «🫏 Віз: 150/200 · ще 2год 41хв»
+    /// and one line per pile — a piece of gear named with its tier and wear.
+    /// With no wagon to show, the bag's root.
+    private static func wagonView(context: Context) async throws -> (text: String, markup: TGInlineKeyboardMarkup) {
+        let ctrl = Controllers.inventoryController
+        let lingo = context.lingo, locale = context.session.locale
+        guard let userId = context.session.id,
+              let wagon = try await WagonService.status(for: context.session, on: context.db) else {
+            let entries = try await InventoryEntry.list(for: context.session, on: context.db)
+            let locked = try await passiveRun(holding: context.session, on: context.db) != nil
+            return (ctrl.renderRoot(entries: entries, session: context.session, lingo: lingo, locale: locale, locked: locked),
+                    ctrl.rootKeyboard(entries: entries, lingo: lingo, locale: locale))
+        }
+        var lines = ["<b>\(WagonDisplay.icon) \(lingo.localize("wagon.name", locale: locale))</b>",
+                     WagonDisplay.statusLine(wagon, lingo: lingo, locale: locale), ""]
+        let cargo = try await WagonService.cargo(for: userId, on: context.db).sorted { $0.itemId < $1.itemId }
+        if cargo.isEmpty {
+            lines.append(lingo.localize("estate.warehouse.empty", locale: locale))
+        }
+        for pile in cargo {
+            guard let item = ItemCatalog.find(pile.itemId) else { continue }
+            // A piece of gear is named like the warehouse's copies: its tier,
+            // enchant and wear (the wagon carries anything, 2026-11-08).
+            if !item.stackable {
+                lines.append(EstateController.gearLabel(item, pile.gearState, lingo: lingo, locale: locale))
+                continue
+            }
+            let icon = item.icon.map { "\($0) " } ?? ""
+            lines.append("\(icon)\(lingo.localize(item.nameKey, locale: locale)) ×\(pile.quantity)")
+        }
+        let back = TGInlineKeyboardButton(text: lingo.localize("inventory.back_root", locale: locale), callbackData: "inv:root")
+        return (lines.joined(separator: "\n"), TGInlineKeyboardMarkup(inlineKeyboard: [[back]]))
+    }
+
     /// Where a card lands once nothing of `item` is left: the list it was
     /// opened from, or — that category emptied — the bag's root.
     private static func bagList(after item: Item, context: Context) async throws -> BagCard.Screen {
@@ -806,7 +864,7 @@ extension InventoryController {
                     ctrl.categoryKeyboard(type: item.type, entries: entries, lingo: lingo, locale: locale))
         }
         let locked = try await passiveRun(holding: context.session, on: context.db) != nil
-        return (ctrl.renderRoot(entries: entries, session: context.session, lingo: lingo, locale: locale, locked: locked),
-                ctrl.rootKeyboard(entries: entries, lingo: lingo, locale: locale))
+        return (ctrl.renderRoot(entries: entries, session: context.session, lingo: lingo, locale: locale, locked: locked, wagon: try await WagonService.status(for: context.session, on: context.db)),
+                ctrl.rootKeyboard(entries: entries, lingo: lingo, locale: locale, wagon: try await WagonService.status(for: context.session, on: context.db)))
     }
 }

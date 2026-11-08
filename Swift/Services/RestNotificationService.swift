@@ -107,6 +107,32 @@ public enum RestNotificationService {
         }
         await notifyZlatnyksCredited(db: db, bot: bot, lingo: lingo)
         await notifyEvents(users: users, db: db, bot: bot, lingo: lingo, now: now)
+        await settleWagons(db: db, bot: bot, lingo: lingo, now: now)
+    }
+
+    // MARK: - The wagon's end (2026-11-08)
+
+    /// A hire that has run out (`spec-wagon.md` §3.5): the carter takes the
+    /// cargo into the warehouse up to its cap, and the player is told once —
+    /// the settlement's marker is written in the delivery's own transaction,
+    /// before this push. What did not fit moves in on later sweeps, quietly, as
+    /// room appears.
+    private static func settleWagons(db: any Database, bot: TGBot, lingo: Lingo, now: Date) async {
+        if let settled = try? await WagonService.settleEnded(on: db, now: now) {
+            for done in settled {
+                var lines = ["\(WagonDisplay.icon) " + lingo.localize("wagon.ended.notice", locale: done.locale)]
+                if done.moved > 0 {
+                    lines.append(lingo.localize("wagon.ended.delivered", count: done.moved, locale: done.locale,
+                                                interpolations: ["count": "\(done.moved)"]))
+                }
+                if done.left > 0 {
+                    lines.append(lingo.localize("wagon.ended.left", count: done.left, locale: done.locale,
+                                                interpolations: ["count": "\(done.left)"]))
+                }
+                await push(lines.joined(separator: " "), toChat: done.telegramId, bot: bot)
+            }
+        }
+        try? await WagonService.settleRemainders(on: db, now: now)
     }
 
     // MARK: - Full HP

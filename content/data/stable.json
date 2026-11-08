@@ -1,0 +1,24 @@
+{
+  "wagon" : {
+    "capacity" : 200,
+    "lengths" : [
+      {
+        "minutes" : 60,
+        "silver" : 100
+      },
+      {
+        "minutes" : 180,
+        "silver" : 190
+      },
+      {
+        "minutes" : 1440,
+        "silver" : 670
+      },
+      {
+        "minutes" : 10080,
+        "silver" : 2160
+      }
+    ],
+    "travelMinutes" : 3
+  }
+}

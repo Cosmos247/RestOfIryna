@@ -32,6 +32,15 @@ public enum TravelService {
         return Double(travelMinutes) * 60.0 / Catalogs.current.timeScale
     }
 
+    /// The crossing a trip set out now would take: the road's own, or the
+    /// slower one while a hired wagon rides along (2026-11-08, the owner:
+    /// three minutes, not two — `stable.json` → `travelMinutes`).
+    public static func crossingSeconds(for user: User, on db: any Database, now: Date = Date()) async throws -> TimeInterval {
+        guard let userId = user.id, let wagon = try await WagonService.wagon(for: userId, on: db),
+              wagon.isRunning(at: now) else { return travelSeconds }
+        return max(travelSeconds, WagonCatalog.travelSeconds)
+    }
+
     // MARK: - Start
 
     public enum StartFailure: Error, Sendable {
@@ -70,8 +79,11 @@ public enum TravelService {
         if user.location == destination.rawValue { throw StartFailure.alreadyAtDestination }
 
         let now = Date()
-        let endsAt = now.addingTimeInterval(travelSeconds)
-        let state = try await TravelState.begin(for: user, destination: destination, endsAt: endsAt, on: db)
+        // Stamped on the row: the wagon's slower road while its hire runs.
+        let crossing = try await crossingSeconds(for: user, on: db, now: now)
+        let endsAt = now.addingTimeInterval(crossing)
+        let state = try await TravelState.begin(for: user, destination: destination, endsAt: endsAt,
+                                                crossingSeconds: crossing, on: db)
         // Setting out stops the rest clock, the same way beginning an
         // expedition does. `tick` would clear it on the next interaction
         // anyway, but a trip is exactly the stretch a player can spend
@@ -123,11 +135,17 @@ public enum TravelService {
         // owed while the bot was down reads as a negative remainder (the player
         // is at the far end, so walking back is the whole road), and no position
         // can be further than one crossing from either side.
-        let remaining = min(travelSeconds, max(0, trip.endsAt.timeIntervalSince(now)))
-        let walked = travelSeconds - remaining
+        //
+        // The crossing is the trip's own (2026-11-08): 3 min with a hired wagon,
+        // stamped when it set out and carried by every leg after, so a turn-back
+        // on the wagon's road is not priced against the road without it.
+        let crossing = trip.crossingSeconds ?? travelSeconds
+        let remaining = min(crossing, max(0, trip.endsAt.timeIntervalSince(now)))
+        let walked = crossing - remaining
         let origin: TravelDestination = trip.destination == .capital ? .estate : .capital
         let state = try await TravelState.begin(for: user, destination: origin,
-                                                endsAt: now.addingTimeInterval(walked), on: db)
+                                                endsAt: now.addingTimeInterval(walked),
+                                                crossingSeconds: crossing, on: db)
         scheduleArrival(stateId: state.id, endsAt: state.endsAt, db: db, bot: bot, lingo: lingo)
         return state
     }

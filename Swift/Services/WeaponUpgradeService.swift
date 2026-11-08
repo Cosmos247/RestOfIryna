@@ -134,12 +134,20 @@ public enum WeaponUpgradeService {
         }
 
         // 5. Availability snapshot. The capital has no warehouse, so the Master
-        // counts the bag alone — the same number his card shows.
+        // counts the bag and — while it is in town — the hired wagon as the
+        // second store (2026-11-08), the same numbers his card shows.
         var shortages: [CraftingService.Shortage] = []
         var snapshot: [String: (inv: Int, wh: Int)] = [:]
+        let wagonInTown = atMaster ? try await WagonService.inTown(for: user, on: db) : false
         for input in nextStep.inputs {
             let invQty = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: db)
-            let whQty  = atMaster ? 0 : try await WarehouseEntry.totalQuantity(of: input.itemId, for: userId, on: db)
+            let whQty: Int
+            if atMaster {
+                whQty = wagonInTown && WagonService.carries(input.itemId)
+                    ? try await WagonService.quantity(of: input.itemId, for: userId, on: db) : 0
+            } else {
+                whQty = try await WarehouseEntry.totalQuantity(of: input.itemId, for: userId, on: db)
+            }
             snapshot[input.itemId] = (invQty, whQty)
             let total = invQty + whQty
             if total < input.quantity {
@@ -163,7 +171,11 @@ public enum WeaponUpgradeService {
             }
             let fromWH = input.quantity - fromInv
             if fromWH > 0 {
-                _ = try await WarehouseEntry.remove(input.itemId, quantity: fromWH, from: user, on: db)
+                if atMaster {
+                    _ = try await WagonService.removeCargo(input.itemId, quantity: fromWH, userId: userId, on: db)
+                } else {
+                    _ = try await WarehouseEntry.remove(input.itemId, quantity: fromWH, from: user, on: db)
+                }
             }
         }
         user.silver -= fee

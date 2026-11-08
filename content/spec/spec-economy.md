@@ -408,6 +408,7 @@ the draft band lives and where content arrives after the rebalance.
 | tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |
 | the fortune teller's tinctures | 10–40 | per tincture, the plants and the trophy on top |
 | the fortune teller's card | 10 | at most one a game day; a dispel 30, then one final second card 20 |
+| the stable's wagon | 100–2160 | per hire, 4 lengths (`spec wagon`) |
 
 **The faucet** — one job per NPC per game day, taken at the NPC
 
@@ -482,6 +483,12 @@ item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 > cheapest and the dearest type for every plot number — 1,732 and 2,670 — so it reads
 > 34,558–36,878 where it read 32,826–34,208. No silver is charged, so the mandatory spend above
 > is unchanged; the ~21,900 below was not re-derived.
+
+> *Amended 2026-11-08 (`spec-wagon.md`).* The stable's wagon joins the sinks: 100 / 190 / 670 /
+> 2,160 🪙 for 1 hour / 3 hours / 1 day / 7 days, the owner's start and the curve 100 × hours^0.6.
+> It changes no price at the trader; it only saves the road and the taps of carrying. At 100 🪙 an
+> hour it pays on valuable cargo — 4% of a 235-place run of iron or clay, 43% of one of pebbles
+> (§5 of that spec) — so the bulk materials will mostly still travel by bag.
 
 **The trader is the economy's only real drain, and using it is a choice.** Buying
 every material rather than gathering it costs ~21,900 — which is almost exactly

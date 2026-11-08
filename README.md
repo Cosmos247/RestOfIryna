@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 585 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 597 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -124,11 +124,13 @@ RestOfIryna/
 │   │   ├── GlobalCommandsController.swift
 │   │   ├── ExplorationController.swift   # Phase 3.1 active exploration (step/bag/return/death; the return names «Принесено:» since 2026-10-23) — encounters now hand off to CombatController; at 0 Vigor the forest edge explains what hunger costs (`modePrompt`, 2026-10-08); the 🏕 picker prints each run's depth and the waiting screen where the governor is (📍, 2026-10-12)
 │   │   ├── CombatController.swift        # Phase 4.1 + 4.2 turn-based PvE duel — Attack/Defend/Flee + [🪄 Techniques] submenu (Special Atk / Special Def / Super) with per-fight budget; registration rabid-dog tutorial fight
+│   │   ├── EstateController+Wagon.swift  # 2026-11-08 — the wagon in the yard, reached from the warehouse: its list and cards load from and unload to the warehouse; the warehouse cap holds
 │   │   ├── EstateController.swift        # The estate: Root → House (Workshop · Kitchen · upgrades) / plots, warehouse, per-level artwork. **2026-09-17**: claiming a slot is a two-step now — `estate:plot:type:` draws the picked type's card and asks, `estate:plot:build:` is the only writer (nothing in the code can undo a claim), and every «what it costs / what you have» line on its screens renders through `RequirementLine`
 │   │   ├── CapitalController.swift       # Phase 6.0–6.5 — travel-gated hub, split across two streets since 2026-09-20 (👑 Замкова: Базар / Ристалище / Гільдії / Палац · 🏘 Поділ: Крамар / Майстер / Шинок / Ворожка · the square holds only the two roads); Trader (buy/sell + ✏️ N) + Tavern (food + dice/darts) + Fortune Teller + Master (armor buy/repair/enchant) + Market/Базар (player-to-player listings + 🤝 Trade); 1 stub left (Arena)
 │   │   ├── CapitalController+Treasury.swift # 2026-10-11 — the palace's «🟡 Канцелярія» (code: `treasury`): the Chancellery, the class change card, the «now → after» preview and the purchase, each a caption edit of the palace photo; screens built by pure functions a rehearsal reads
 │   │   ├── CapitalController+Flask.swift # 2026-10-30 — a holiday's reveal in the palace (Велесова ніч): the story and the scribe under the palace card until the flask is taken; «🩸 Взяти флягу» (`event:flask:<event>`, claimed in `MainController`) makes the empty `event_blood` row that lets a walk through the manor's gate
 │   │   ├── CapitalController+Rewards.swift # 2026-11-01 — a holiday's prizes in the palace after the close: the King's words, the place and «💰» under the palace card, «🎁 Отримати нагороду» (`event:reward:`, claimed in `MainController`)
+│   │   ├── CapitalController+Stable.swift # 2026-11-08 — the stable on Поділ (`content/spec/spec-wagon.md`): the wagon «🫏 Віз» hired for 1 год / 3 год / 1 день / 7 днів, each asked first; the answer names its length and price
 │   │   ├── CapitalController+Tinctures.swift # 2026-11-07 — the fortune teller's tinctures (`content/spec/spec-tinctures.md`): «🧪 Настоянки» on her screen opens the list in the same bubble, a card counts the BAG and her fee, «🧪 Зварити» and «📌 У нотатник» under it
 │   │   ├── ExplorationController+Manor.swift # 2026-10-29 — a holiday's manor on the walk (Велесова ніч): the entrance at its km, the gate's question, a step deeper that is always a fight, the step back refused, the close that walks the player out
 │   │   ├── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons; while a passive run is out the bag is the governor's — shown, never changed (2026-10-12)
@@ -146,6 +148,8 @@ RestOfIryna/
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
 │   │   ├── RecipeNote.swift      # 2026-10-10 — `recipe_notes`: a price card pinned to the journal, as `kind · ref · target` (the THING, never a row — the enchant's is the piece + the level, since a warehouse trip re-creates the row); `Kind` and `Key` are the card ↔ note identity. Never a copy of the price
 │   │   ├── TrainingGroundCatalog.swift # 2026-09-27 — façade over `training_ground.json`; a level's player-level floor is its technique's `combat.json` row
+│   │   ├── Wagon.swift # 2026-11-08 — the hired wagon (`wagons`) and its cargo (`wagon_cargo`); where it is follows from the player
+│   │   ├── WagonCatalog.swift # 2026-11-08 — façade over `stable.json`'s wagon: its places and its lengths
 │   │   ├── TreasuryCatalog.swift # 2026-10-11 — façade over `treasury.json`: what zlatnyks buy, in list order; a `TreasuryKind` is the code that carries an entry out
 │   │   ├── ZlatnykPurchase.swift # 2026-10-11 — one row per Treasury purchase, written in the purchase's own transaction; history, not in `LiveReferenceQuery`
 │   │   ├── EventCatalog.swift # 2026-10-29 — façade over `events.json`: a holiday's phases (the capital's look from `artFrom` / the manor open / over) and its manor creatures, every level's line solved at install
@@ -183,6 +187,9 @@ RestOfIryna/
 │   │   ├── AddFortuneStage.swift # 2026-10-10 — `users.fortune_stage` (default `free`): where a player stands between two free tarot cards; one column, no row rewritten
 │   │   ├── AddZlatnyks.swift # 2026-10-11 — `users.zlatnyks` (the premium currency, «златник»; NOT NULL, default 0, CHECK ≥ 0) and `users.zlatnyks_announced` (the watchman's marker); two columns, no row rewritten
 │   │   ├── AddExplorationHaul.swift # 2026-10-23 — nullable `haul` on `exploration_state`: what an active walk put in the bag (`ExpeditionHaul` JSON), named at the manor door; no row touched
+│   │   ├── AddTravelCrossing.swift # 2026-11-08 — each trip stamps its crossing (3 min with a hired wagon), which a turn-back reads
+│   │   ├── AddWagonCargoGear.swift # 2026-11-08 — the wagon's cargo carries a piece's tier, wear and enchant; one row per copy
+│   │   ├── CreateWagons.swift # 2026-11-08 — `wagons` and `wagon_cargo`, two new tables; listed in `WipeForRebalance.playerTables`, the cargo in `LiveReferenceQuery`
 │   │   ├── CreateZlatnykPurchases.swift # 2026-10-11 — `zlatnyk_purchases`, the Treasury's purchase log (who, what, price, what it did, the balance after); a new table, listed in `WipeForRebalance.playerTables`
 │   │   ├── CreateEventBlood.swift # 2026-10-29 — `event_blood`, one row per player per holiday; listed in `WipeForRebalance.playerTables`
 │   │   ├── CreateEventNotices.swift # 2026-10-29 — `event_notices`, one row per holiday notice sent; listed in `WipeForRebalance.playerTables`
@@ -269,6 +276,7 @@ RestOfIryna/
 │   │   ├── PlotService.swift     # Phase 5.1 + 2026-05-18 destination picker — pure plot helpers: accumulated, bonusAccumulated, harvest(to:HarvestDestination — `.bag` / `.warehouse`), claim, slotsForLevel. Two atomic-failure cases — `bagFull` and (2026-09-09) `warehouseFull` — preserve the yield on the plot so the player can retry elsewhere. The warehouse branch used to write with NO cap check at all, which made the estate's own income the one way to overflow the store; it is all-or-nothing because the Mine's two output streams share one `lastHarvestedAt`.
 │   │   ├── KingService.swift    # 2026-09-21 — the King's decree chain engine. 11 of the 18 condition kinds are LIVE STATE READS (`build_training_ground` joined them 2026-09-27) (depth, level, estate/weapon/bag tier, warehouse shelf, plot claimed, technique learned, duel won), so a decree cannot drift out of step with the thing it is about; the other 7 are events nothing records and tick `KingProgress.counter` through `record`, which fires ONLY when the open decree is the one asking. A harvest is an event, not a state — `Plot.lastHarvestedAt` starts at claim time and resets on every harvest. Turn-in is all-or-nothing and predicts the food's bag fit in the WRITER's units before mutating anything; the counter tick is a targeted guarded UPDATE, because it also runs from the passive expedition's detached sweep Since 2026-10-04 `Payout.vigorLost`, and `readyUnannounced` / `markAnnounced` for the watchman's task-ready notice.
 │   │   ├── TrainingGroundService.swift # 2026-09-27 — build/raise the house's Training Ground: T4 gate → level → player floor → silver → materials → teach → catch up
+│   │   ├── WagonService.swift # 2026-11-08 — the wagon: hire, the capital's second store (bag first, all or nothing), the yard's moves with the warehouse, the end of a hire
 │   │   ├── TinctureService.swift # 2026-11-07 — the fortune teller's brew: `CraftMath` with the warehouse left out, the drains, the output and her fee in one transaction
 │   │   ├── PlotProductionService.swift # Phase 5.1 — single Task.detached ticker; pushes "ready to harvest" notifications when plot caps are reached
 │   │   ├── CraftingService.swift # Phase 5.2 — craft(_:times:for:on:) drains inputs from combined inventory+warehouse pool (inventory first) and puts the output in the bag, the warehouse once the bag is full — one transaction, the arithmetic `CraftMath` (2026-11-04: the kitchen's batches, `batchOffer`); CraftResult enum + Shortage struct for the modal alert
@@ -317,7 +325,8 @@ RestOfIryna/
 │   │   ├── InviteToken.swift         # 2026-09-08 — the `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), base32 over letters only, 16 chars, valid 5 real minutes
 │   │   ├── Lingo+Locales.swift
 │   │   ├── EphemeralChatState.swift  # in-memory actor — the trip's road card id (2026-10-08), exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), pending Market-listing (qty→price, Phase 6.5) + Trade-input (silver/qty, Phase 6.5) state, latest status-banner message ID per user
-│   │   ├── Countdown.swift           # 2026-09-09 — the one "time left" format: `2год 5хв` · `1хв 22сек` · `5хв` · `42сек` (two most significant units; 2026-09-11 extended that rule to minutes+seconds, which had printed minutes alone). Replaced an MM:SS / HH:MM pair no screen could tell apart; every countdown and every authored duration now prints from here
+│   │   ├── WagonDisplay.swift        # 2026-11-08 — the wagon phrased once: its lengths, «🫏 Віз: 150/200 · ще 2год 41хв», its button
+│   │   ├── Countdown.swift           # 2026-09-09 (days since 2026-11-08) — the one "time left" format: `2год 5хв` · `1хв 22сек` · `5хв` · `42сек` (two most significant units; 2026-09-11 extended that rule to minutes+seconds, which had printed minutes alone). Replaced an MM:SS / HH:MM pair no screen could tell apart; every countdown and every authored duration now prints from here
 │   │   ├── ItemCard.swift            # 2026-09-09 — the "what am I buying" card shown between a shop listing and the purchase question (Trader · Master · Tavern · Market). Name, lore and what it grants, read from the item's own effects / ladder rung
 │   │   ├── FortuneDisplay.swift      # 2026-09-09 — what the drawn tarot card is doing, GENERATED from its `FortuneEffect`; `oneShotLine` reads the stamped record instead, because only that knows which way the Wheel fell. Since 2026-10-04 the reveal prints through it too — no locale key carries a card's numbers
 │   │   ├── PollWatchdog.swift        # 2026-10-08 — exits the process when no `getUpdates` has completed for 120 s, so pm2 restarts a frozen poll loop; a plain Thread, not a Task. Born of four freezes caused by the SDK's rate limiter (now off)
@@ -800,6 +809,13 @@ card, `266d28e`, went with it):
 - the Ukrainian copy says «настоянка», never «зілля», on the bag's 🧪 category and everywhere else.
 - every discard asks first, one unit and a lone unit included: «🥔 Картопля — викинути 1? Повернути не вийде.» (2026-11-07, the
   players' ask).
+
+**Built, NOT live** (committed 2026-11-08, content schema v33 with the binary and three migrations — a Pi build and a restart):
+- «🐎 Стайня» on Поділ hires a **wagon** («🫏 Віз») for 1 hour / 3 hours / 1 day / 7 days at 100 / 190 / 670 / 2160 silver: 200
+  places for anything the warehouse takes (gear a copy at a time, with its wear; never the class weapon). It rides with the player
+  — a crossing takes 3 minutes with it — and waits in the yard during a walk. At home it is loaded and unloaded at the warehouse; in
+  town the trader, the Master, the fortune teller, the jobs, the market, the guild vault and a trade take from the bag first and
+  the wagon for the rest. An ended hire sends the cargo to the warehouse (`content/spec/spec-wagon.md`).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

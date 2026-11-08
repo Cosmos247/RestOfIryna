@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain), `spec-tinctures.md` (the fortune teller's cauldron) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
+| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain), `spec-tinctures.md` (the fortune teller's cauldron), `spec-wagon.md` (the stable's wagon) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -148,7 +148,7 @@ a thing it must describe ALL of it: both lines are built from the data (`bonusOu
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never
 goes around it. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening|king|tinctures|events>`, never typed, so a specification
+<progression|gates|bestiary|items|sets|economy|opening|king|tinctures|wagon|events>`, never typed, so a specification
 cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
 `-c release`.
 
@@ -559,7 +559,7 @@ hand; the CLASS icons are a different thing and stay ⚔️ / 🏹 / 🔮. Auto-
 `project-weapon-own-icon`.
 
 **The warehouse cap is enforced on every path in, including
-`PlotService.harvest(to: .warehouse)`.** Harvest is all-or-nothing like the bag, with the yield
+`PlotService.harvest(to: .warehouse)` and the wagon's end-of-hire delivery.** Harvest is all-or-nothing like the bag, with the yield
 left standing on the plot: partial cannot be expressed, because the Mine's two output streams
 share one `lastHarvestedAt`. **No account is exempt** — no `isDeveloper` bypass on any of the
 four warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
@@ -578,10 +578,19 @@ N = 1 of it. Auto-memory `project-fit-check-matches-the-writer`, `project-kitche
 
 **What a place can draw on is where it stands.** The Master and the fortune teller are in the
 capital, which has no warehouse, so his lesson, his enchant and her tinctures count and take
-materials from the BAG alone; the
+materials from the BAG — and the hired wagon while it is in town; the
 workshop, the kitchen, the Training Ground and the estate and bag upgrades stand at the estate
 and draw bag + warehouse. **A card counts in the same place its service draws from.**
 Auto-memory `project-master-draws-from-bag`.
+
+**The hired wagon («🫏 Віз», `stable.json`, `spec-wagon.md`) is the bag's second store in town.** Every
+capital place that takes from the bag goes through `WagonService` — `townStock`/`townTotal` to count, `take`
+and `put` (the bag first, `WagonMath`, all or nothing) to write — and only while `WagonService.inTown`; a new
+capital reader of the bag that skips it hides the cargo there. It carries anything the warehouse takes, gear
+with its own `GearState` and a copy at a time; at home it trades with the warehouse alone and no estate service
+reads it (the owner: unload first); it never enters the forest; an ended hire sends its cargo to the warehouse up
+to the cap. **A trip's crossing is stamped on its row** (`travel_state.crossing_seconds`: 3 min with the wagon, 2
+without) — a turn-back reads it, never the global `travelSeconds`. Auto-memory `project-wagon-rental`.
 
 **The fortune teller brews** (2026-11-07, `spec-tinctures.md`): «🧪 Настоянки» on her screen, five recipes of plants and a
 trophy in `recipes.json`, category `tincture`, each with a `silverFee`. **A tincture is not a craft**: `isCraftable` is false, so

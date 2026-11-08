@@ -58,6 +58,9 @@ public struct ContentBundle: Sendable {
     /// `treasury.json` (schema v22) — what zlatnyks buy. Optional only so
     /// hand-built test fixtures need not carry one.
     public let treasury: TreasuryFileDTO?
+    /// `stable.json` (schema v33) — the wagon the stable on Поділ hires out.
+    /// Optional only so hand-built test fixtures need not carry one.
+    public let stable: StableFileDTO?
     /// `events.json` (schema v29) — the holidays: when each runs and what its
     /// manor holds. Optional only so hand-built test fixtures need not carry one.
     public let events: EventFileDTO?
@@ -99,6 +102,7 @@ public struct ContentBundle: Sendable {
         king: KingFileDTO? = nil,
         trainingGround: TrainingGroundFileDTO? = nil,
         treasury: TreasuryFileDTO? = nil,
+        stable: StableFileDTO? = nil,
         events: EventFileDTO? = nil,
         zones: ZoneFileDTO? = nil,
         tuning: TuningBundleDTO? = nil,
@@ -130,6 +134,7 @@ public struct ContentBundle: Sendable {
         self.king = king
         self.trainingGround = trainingGround
         self.treasury = treasury
+        self.stable = stable
         self.events = events
         self.zones = zones
         self.tuning = tuning

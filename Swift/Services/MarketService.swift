@@ -19,6 +19,11 @@
 //  Only stackable items are listable (gear is non-stackable and excluded), so
 //  `quantity` and per-unit math are always exact.
 //
+//  The hired wagon in town (2026-11-08, `spec-wagon.md` §3.4) is the bag's
+//  second store here: a lot is escrowed from the bag first and the wagon for
+//  the rest; a bought or cancelled lot fills the bag first and the wagon with
+//  the rest — all or nothing, through `WagonService`.
+//
 
 import Fluent
 import Foundation
@@ -40,14 +45,16 @@ public enum MarketService {
         case notFound
         case ownListing
         case notEnoughSilver(have: Int, need: Int)
-        case inventoryFull(free: Int, need: Int)
+        /// `withWagon`: the hired wagon in town was counted too (2026-11-08).
+        case inventoryFull(free: Int, need: Int, withWagon: Bool)
     }
 
     public enum CancelResult: Sendable {
         case success(itemId: String, quantity: Int)
         case notFound
         case notOwner
-        case inventoryFull(free: Int, need: Int)
+        /// `withWagon`: the hired wagon in town was counted too (2026-11-08).
+        case inventoryFull(free: Int, need: Int, withWagon: Bool)
     }
 
     // MARK: - Create
@@ -65,7 +72,8 @@ public enum MarketService {
             return .tooManyLots(max: MarketCatalog.maxActiveLots)
         }
 
-        let inBag = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+        let wagonInTown = try await WagonService.inTown(for: user, on: db)
+        let inBag = try await WagonService.townTotal(of: itemId, for: user, on: db)
         if inBag < quantity {
             return .notEnoughInBag(have: inBag, need: quantity)
         }
@@ -76,7 +84,9 @@ public enum MarketService {
 
         // Escrow the units, debit the fee, write the lot — order so a failed
         // drain never leaves the fee charged.
-        let removed = try await InventoryEntry.remove(itemId, quantity: quantity, from: user, on: db)
+        let removed = try await db.transaction { tx in
+            try await WagonService.take(itemId, quantity: quantity, from: user, wagonInTown: wagonInTown, on: tx)
+        }
         guard removed else { return .notEnoughInBag(have: inBag, need: quantity) }
 
         user.silver -= MarketCatalog.listingFee
@@ -104,11 +114,12 @@ public enum MarketService {
             return .notEnoughSilver(have: buyer.silver, need: lot.price)
         }
 
-        let canFit = try await InventoryEntry.canAccept(lot.itemId, quantity: lot.quantity, for: buyer, on: db)
-        if !canFit {
-            let used = try await InventoryEntry.slotsUsed(for: buyer, on: db)
-            let cap = InventoryEntry.slotCap(for: buyer)
-            return .inventoryFull(free: max(0, cap - used), need: lot.quantity)
+        let wagonInTown = try await WagonService.inTown(for: buyer, on: db)
+        guard try await WagonService.plan(put: lot.itemId, quantity: lot.quantity, to: buyer,
+                                          wagonInTown: wagonInTown, on: db) != nil else {
+            let room = try await WagonService.room(for: lot.itemId, user: buyer, wagonInTown: wagonInTown, on: db)
+            return .inventoryFull(free: room.bagFree + room.wagonFree, need: lot.quantity,
+                                  withWagon: wagonInTown && WagonService.carries(lot.itemId))
         }
 
         guard let seller = try await User.find(sellerId, on: db) else { return .notFound }
@@ -120,7 +131,9 @@ public enum MarketService {
         seller.silver += lot.price
         try await seller.saveAndCache(in: db)
 
-        try await InventoryEntry.add(lot.itemId, quantity: lot.quantity, to: buyer, on: db)
+        try await db.transaction { tx in
+            _ = try await WagonService.put(lot.itemId, quantity: lot.quantity, to: buyer, wagonInTown: wagonInTown, on: tx)
+        }
 
         let itemId = lot.itemId
         let quantity = lot.quantity
@@ -146,14 +159,17 @@ public enum MarketService {
         guard let lot = try await MarketListing.find(id: id, on: db) else { return .notFound }
         guard let sellerId = seller.id, lot.$seller.id == sellerId else { return .notOwner }
 
-        let canFit = try await InventoryEntry.canAccept(lot.itemId, quantity: lot.quantity, for: seller, on: db)
-        if !canFit {
-            let used = try await InventoryEntry.slotsUsed(for: seller, on: db)
-            let cap = InventoryEntry.slotCap(for: seller)
-            return .inventoryFull(free: max(0, cap - used), need: lot.quantity)
+        let wagonInTown = try await WagonService.inTown(for: seller, on: db)
+        guard try await WagonService.plan(put: lot.itemId, quantity: lot.quantity, to: seller,
+                                          wagonInTown: wagonInTown, on: db) != nil else {
+            let room = try await WagonService.room(for: lot.itemId, user: seller, wagonInTown: wagonInTown, on: db)
+            return .inventoryFull(free: room.bagFree + room.wagonFree, need: lot.quantity,
+                                  withWagon: wagonInTown && WagonService.carries(lot.itemId))
         }
 
-        try await InventoryEntry.add(lot.itemId, quantity: lot.quantity, to: seller, on: db)
+        try await db.transaction { tx in
+            _ = try await WagonService.put(lot.itemId, quantity: lot.quantity, to: seller, wagonInTown: wagonInTown, on: tx)
+        }
 
         let itemId = lot.itemId
         let quantity = lot.quantity

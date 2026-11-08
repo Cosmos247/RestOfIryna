@@ -26,7 +26,7 @@ public enum LiveReferenceQuery {
     /// the hot swap will happily break.
     ///
     /// Derived by walking every `@Field` in `Swift/Models`, not from the design
-    /// document — which listed six of these ten. Eight columns are deliberately
+    /// document — which listed six of the first ten. Eight columns are deliberately
     /// NOT here, each for a stated reason:
     ///
     /// - `quest_progress.npc` — covered transitively. A row's `quest_id` comes
@@ -66,6 +66,9 @@ public enum LiveReferenceQuery {
                         try await MarketListing.query(on: db).unique().all(\.$itemId)))
         live.append(ids("guild_vault", "item_id", .item,
                         try await GuildVaultEntry.query(on: db).unique().all(\.$itemId)))
+        // What is on a hired wagon (2026-11-08) — cargo like the warehouse's.
+        live.append(ids("wagon_cargo", "item_id", .item,
+                        try await WagonCargoEntry.query(on: db).unique().all(\.$itemId)))
         // A recipe the player has learned but the bundle no longer defines
         // leaves a workshop row that renders nothing and crafts nothing.
         live.append(ids("learned_recipes", "recipe_id", .recipe,

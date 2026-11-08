@@ -218,7 +218,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // by hand (`ZlatnykService`). A failed read shows no line rather than
         // a profile that never draws.
         let zlatnyks = (try? await ZlatnykService.balance(of: context.session.requireID(), on: context.db)) ?? 0
-        let text = renderProfile(session: context.session, equipped: equipped, zlatnyks: zlatnyks, lingo: context.lingo)
+        // The hired wagon (2026-11-08) — read here, rendered as a line below.
+        let wagon = try await WagonService.status(for: context.session, on: context.db)
+        let text = renderProfile(session: context.session, equipped: equipped, zlatnyks: zlatnyks, wagon: wagon,
+                                 lingo: context.lingo)
         let keyboard = profileKeyboard(lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
@@ -398,8 +401,17 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // A plot note is priced at the player's next plot; read only when one is open.
         let plotNumber = notes.contains { $0.kind == .plot }
             ? try await PlotService.nextPlotNumber(for: context.session, on: context.db) : 1
-        let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock, plotNumber: plotNumber,
-                                              lingo: context.lingo, locale: context.session.locale)
+        // A hired wagon rides to town with the player (2026-11-08), so the
+        // Master's and the fortune teller's notes count its cargo beside the bag
+        // while the hire runs — what their cards will count when the player
+        // gets there.
+        var wagon: [String: Int] = [:]
+        if let userId = context.session.id,
+           let status = try await WagonService.status(for: context.session, on: context.db), status.running {
+            for pile in try await WagonService.cargo(for: userId, on: context.db) { wagon[pile.itemId, default: 0] += pile.quantity }
+        }
+        let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock, wagon: wagon,
+                                              plotNumber: plotNumber, lingo: context.lingo, locale: context.session.locale)
         await editScreen(
             chatId: .chat(context.session.telegramId),
             messageId: editMessageId,
@@ -622,7 +634,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Profile Rendering
 
-    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], zlatnyks: Int, lingo: Lingo) -> String {
+    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], zlatnyks: Int,
+                               wagon: WagonService.Status? = nil, lingo: Lingo) -> String {
         let nickname = session.nickname ?? ""
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
@@ -755,6 +768,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         }
         if session.sleepWard {
             text += "\n🌸 " + l.localize("profile.sleep_ward", locale: loc)
+        }
+        // The hired wagon (2026-11-08, `spec-wagon.md` §4): «🫏 Віз: 150/200 ·
+        // ще 2год 41хв», or «· оренда скінчилась» while a remainder waits on it.
+        if let wagon {
+            text += "\n" + WagonDisplay.statusLine(wagon, lingo: l, locale: loc)
         }
         return text
     }

@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 11-07)
+## Commit index — live-play polish and after (2026-09-09 → 11-08)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-07)* **the 21:16 deploy record, and `11d16bb`'s hash fill** — records only: everything from `75eb348` to `11d16bb`
+- *(this commit, 11-08)* **the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill** — Swift + content schema **v33** (`stable.json`) + uk/en
+  + three migrations (`CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`, no row rewritten), NOT deployed: hired on Поділ for 1 год / 3
+  год / 1 день / 7 днів at 100 / 190 / 670 / 2160 🪙, 200 places for anything the warehouse takes, a 3-minute crossing with it, the bag's
+  second store in town, unloaded at home, out of the forest (`content/spec/spec-wagon.md`). 597 tests; the digest moved `records` alone
+  (`99f071177056cdc3`, content hash `e96dab98`, COMBINED `647107eb5b3754ab`). The audit before it found and fixed stale wording only.
+- `5e781b2` (11-07) **the 21:16 deploy record, and `11d16bb`'s hash fill** — records only: everything from `75eb348` to `11d16bb`
   went live at the 2026-11-07 21:16:11 restart (the `## Deploy —` entry below).
 - `11d16bb` (11-07) **the tinctures' button reads «🧪 Випити», and `ee5d45b`'s hash fill** — uk/en, one key, LIVE 11-07 21:16 (no migration,
   the digest unchanged): `inventory.action.potion`. «Відвар» shown and declined, «настоянка» and «варить» stand. Records: the testers' list, how
@@ -1028,6 +1033,41 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-08 (the stable's wagon «🫏 Віз») — *(this commit)*
+
+**The ask** («Хочу додати можливість гравцям брати в аренду в Столиці більш швидкого коня а також орендувати обоз»): a first
+proposal (a horse and a wagon at «🐎 Стайня», played sample, six forks) was answered «Поки зупинимось тільки на обозі». The horse is
+parked; `TravelService.turnBack` reads the global `travelSeconds`, so a horse needs a trip that stamps its own crossing (spec §7).
+
+**Decided by quiz, one round at a time:** the name «Віз» (from Віз / Підвода / Мажа / Обоз); 200 places, sized on a read-only live read
+the owner allowed (17 active, 10 with an estate at 3+, warehouses of 277–1,466 building materials, three nearly full; Ліліт's surplus 389 —
+12 bag runs → 2 with the wagon); four lengths with the longest cheapest per minute — the owner rejected a start of 15, then a 30/40/50
+quiz, named the start (100) and took the curve: 100 / 190 / 670 / 2,160; the icon 🫏 (🛞 draws as a car tyre; 🐂 and 🦬 are creatures);
+the four rules — out of the forest, an ended hire's cargo to the warehouse by itself, EVERY capital place that takes from the bag takes
+from the wagon, the stable on Поділ; at home unload first. The draft spec was signed off with «Так» and built the same session.
+
+**Built:** `stable.json` + `StableDTO` (schema v33) with six validator rules, each failing in `WagonTests`; `WagonMath` (ROISim);
+`Wagon`/`WagonCargoEntry` + `CreateWagons` (two tables, `LiveReferenceQuery`, the wipe list); `WagonService`; the stable
+(`CapitalController+Stable.swift`); the yard's screens (`EstateController+Wagon.swift`, on the warehouse's typed prompt); the trader, the
+Master's lesson and enchant, the tinctures, the jobs, the Базар, the guild vault and a trade on the bag-first second store; the bag's,
+profile's and road card's lines; the watchman's end of a hire; `Countdown` days; `spec wagon` and the economy's sinks row.
+596 tests (11 new). The digest moved `records` alone (`d68b80393f91ece6`, COMBINED `4cd6e261d696d586`, content hash `ad7b17f6`); a
+capacity of 201 moved it again and was put back. What the build decided on its own is the spec's §3.7 — above all, the bag's wagon list is
+read-only at home too, because the main router deletes a message whose button it does not know.
+
+**The test bot, then two amendments (the owner, the same evening).** The test bot was started on request (tunnel up,
+`CreateWagons` verified on `roi_test`'s table), then stopped, 1000 🪙 added to both test accounts (`jj` 2004, «Ребекка» 1000 —
+stopped first so the session cache could not keep the old silver) and started again. Then: «Віз повинен їхати не 2хвилини, а 3. і
+завантажувати у віз можна все, а не тільки матеріали.» Built: `stable.json` → `travelMinutes` 3 (validator:
+`stable.wagon_faster_than_road`), each trip stamping its crossing (`AddTravelCrossing`; `turnBack` reads the stamp — it read the
+global two minutes, the trap first noted for the parked horse), the cargo gaining the warehouse's `GearState` columns and losing its
+one-row-per-item constraint (`AddWagonCargoGear`), gear moving a copy at a time from the wagon's list, everything but the class weapon
+carried. Gear on the wagon is read by no place in town (the Master and a trade name the bag's rows). 597 tests; `records` moved again
+(`99f071177056cdc3`, COMBINED `647107eb5b3754ab`, content hash `e96dab98`).
+
+**Also:** the auto-memory index was at 97% of its 25,000-unit cap (a side agent's warning, relayed by the owner); 70 hooks were shortened,
+24,171 → 20,549 units, every pointer kept and checked; the old index is in the session scratchpad.
 
 ## Deploy — 2026-11-07 21:16 (`46437bf` → `11d16bb`) — the trophies, the plants, the tinctures, every discard asked
 
