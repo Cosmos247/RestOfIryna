@@ -69,6 +69,20 @@ enum TinctureService {
         try await stock(recipe, for: user, on: db).mapValues { $0.bag + $0.wagon }
     }
 
+    /// What the list's marks count: the bag and the wagon in town, read once for
+    /// every recipe, by the rule `WagonService.townStock` applies to one item.
+    static func heldForList(for user: User, on db: any Database) async throws -> [String: Int] {
+        guard let userId = user.id else { return [:] }
+        var held: [String: Int] = [:]
+        for row in try await InventoryEntry.list(for: user, on: db) { held[row.itemId, default: 0] += row.quantity }
+        if try await WagonService.inTown(for: user, on: db) {
+            for pile in try await WagonService.cargo(for: userId, on: db) where WagonService.carries(pile.itemId) {
+                held[pile.itemId, default: 0] += pile.quantity
+            }
+        }
+        return held
+    }
+
     /// One tincture. Nothing moves on a refusal: materials are asked first, then
     /// the silver, then the room, all before the transaction.
     static func brew(_ recipe: Recipe, for user: User, on db: any Database) async throws -> BrewResult {

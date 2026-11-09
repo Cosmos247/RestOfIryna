@@ -909,7 +909,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     func showMaster(context: Context) async throws {
         let text = renderMasterMenuBody(session: context.session, lingo: context.lingo)
         let lesson = try await WeaponUpgradeService.lessonAvailable(for: context.session, on: context.db)
-        let keyboard = masterMenuKeyboard(lesson: lesson, lingo: context.lingo, locale: context.session.locale)
+        let lessonReady = lesson ? try await ReadyChecks.lesson(context.session, on: context.db) : false
+        let keyboard = masterMenuKeyboard(lesson: lesson, lessonReady: lessonReady, lingo: context.lingo, locale: context.session.locale)
         _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/master.jpg",
             caption: text,
@@ -931,7 +932,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// is tier 1 and its second rung is open (`WeaponUpgradeService.
     /// lessonAvailable`). Locked buttons are absent in this game, so a player
     /// below the gate sees no button; the King's decree tells them when.
-    private func masterMenuKeyboard(lesson: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    private func masterMenuKeyboard(lesson: Bool, lessonReady: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let buy     = lingo.localize("capital.master.button.buy",     locale: locale)
         let repair  = lingo.localize("capital.master.button.repair",  locale: locale)
         let enchant = lingo.localize("capital.master.button.enchant", locale: locale)
@@ -943,7 +944,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
              TGInlineKeyboardButton(text: enchant, callbackData: "master:enchantlist")]
         ]
         if lesson {
-            let label = lingo.localize("capital.master.button.lesson", locale: locale)
+            let label = ReadyMark.label(lingo.localize("capital.master.button.lesson", locale: locale), ready: lessonReady)
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "master:lesson")])
         }
         rows.append([TGInlineKeyboardButton(text: quest, callbackData: "quest:board:master")])
@@ -956,7 +957,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Best-effort, like every edit here: a failed lookup only hides the
         // lesson's button, and the menu still draws.
         let lesson = (try? await WeaponUpgradeService.lessonAvailable(for: context.session, on: context.db)) ?? false
-        let keyboard = masterMenuKeyboard(lesson: lesson, lingo: context.lingo, locale: context.session.locale)
+        let lessonReady = lesson ? ((try? await ReadyChecks.lesson(context.session, on: context.db)) ?? false) : false
+        let keyboard = masterMenuKeyboard(lesson: lesson, lessonReady: lessonReady, lingo: context.lingo, locale: context.session.locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
@@ -1203,11 +1205,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let hintKey = enchantable.isEmpty ? "capital.master.enchant.empty" : "capital.master.enchant.hint"
         let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo,
                                hintInterpolations: ["cap": "\(MasterCatalog.enchantCap)"])
-        var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
-            guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
+        var rows: [[TGInlineKeyboardButton]] = []
+        var held: [String: Int] = [:]   // Read once per material, what his card counts.
+        for row in enchantable {
+            guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { continue }
+            if held[step.materialId] == nil {
+                held[step.materialId] = try await WagonService.townTotal(of: step.materialId, for: context.session, on: context.db)
+            }
+            let ready = context.session.silver >= step.silver && held[step.materialId, default: 0] >= step.materialQty
             // Cost is shown on the confirm prompt — list shows just the level step.
             let label = "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level)"
-            return [TGInlineKeyboardButton(text: label, callbackData: "master:enchant:\(id.uuidString)")]
+            rows.append([TGInlineKeyboardButton(text: ReadyMark.label(label, ready: ready), callbackData: "master:enchant:\(id.uuidString)")])
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))

@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-09)* **a double tap pays once on the enchant, the estate and the Training Ground, and `334ecc5`'s hash fill** — Swift only, NOT deployed, no migration, the digest unmoved: each
+- *(this commit, 11-09)* **«✅» after a button's name, and `88c886f`'s hash fill** — Swift only, NOT deployed, no copy, no migration, the digest unmoved: on the recipes, the armour's enchant, the plot picker and the single upgrades; the tincture list without 🧪. 619 tests.
+- `88c886f` (11-09) **a double tap pays once on the enchant, the estate and the Training Ground, and `334ecc5`'s hash fill** — Swift only, NOT deployed, no migration, the digest unmoved: each
   yes names the level or tier its question showed, a mismatch is `.stale`. 612 tests.
 - `334ecc5` (11-09) **the stable's Rysak «🐴 Рисак», and `ea9db6e`'s hash fill** — Swift + `stable.json` → `horse` (schema stays v33, no v33 binary deployed) + uk/en + `CreateHorses`
   (one new table), NOT deployed, ships with the wagon: every trip set out while its hire runs takes 1 min 30 s, 50 / 100 / 340 / 1,080 🪙 for the wagon's four lengths, the wagon
@@ -1042,7 +1043,15 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-09, later (a double tap on the paid buttons) — *(this commit)*
+## Session — 2026-11-09, night («✅» after a button's name) — *(this commit)*
+
+**The ask:** a player's idea relayed with a screenshot («А можна додати галочки ✅ якщо вистачає складових на настоянки?»), and the owner: for everything, propose how. A proposal with a played sample, then the owner: «Галочка повинна бути після назви» and a quiz. **Picked:** after the name; the tincture list without 🧪 (I had first shown ✅ in its place; after the name the longest label would lose exactly the mark); on recipes, the choices (enchant, plot picker) and the single upgrades, not the silver-only lists; nothing when something is short; «Повну сумку не потрібно показувати», read as the room being no part of the mark.
+
+**Built:** `ReadyMark` (ROISim: the label, the cost check, unit-tested), `ReadyChecks` (what each card prints, from where it counts: bag + warehouse at the estate, bag + the wagon in town at the Master and the fortune teller), `TinctureService.heldForList` (one read of the bag and one of the wagon, for all five recipes, where the card's reader takes several per ingredient). Ten places: tinctures, kitchen, workshop recipes, the enchant list, the plot picker, the estate's upgrade, the weapon and bag upgrades, the Training Ground (the next level; its house button only while unbuilt), the Master's lesson. A build error caught one more caller of `trainingGroundKeyboard`, the end of a training fight.
+
+**Verified:** build, 619 tests (7 new), `validate --strict`, the digest unmoved. **Rehearsed on a scratch Postgres** (nothing sent to Telegram): 137 checks, the list's read agreeing with the card's number with the wagon in town and left at home, each check one unit, one silver or one level short. **Eight mutants, each caught.** **Not run:** the keyboards themselves in Telegram; `TODO.md`'s top block is the proof, the narrow-phone question included.
+
+## Session — 2026-11-09, later (a double tap on the paid buttons) — `88c886f`
 
 **The ask:** a side agent's note, relayed: the stable's double charge had only been looked for in that work's own diff. The owner: start the test bot and audit the buttons. **Read-only audit** of every `silver -=` and zlatnyk spend, each traced to its callback: seven live buttons can pay twice (enchant, estate upgrade, Training Ground, Master's armour, tincture, tavern dish, tavern roll); the rest are protected by their state or a consumed prompt (list: auto-memory `project-double-tap-audit`). No purchase log exists, so whether it has happened cannot be read. **The owner took the three worst.** Each yes now names what its question showed (`master:enchantok:<row>:<level>`, `estate:upgrade:confirm:<tier>`, `estate:training:confirm:<level>`); a mismatch is `.stale`, a bare old-form button only redraws. The estate's confirm also answers on a throw now.
 

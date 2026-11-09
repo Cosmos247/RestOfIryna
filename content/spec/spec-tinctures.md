@@ -36,7 +36,7 @@ Mid-design: the game's word is «настоянка», never «зілля». At 
 6. **The Sleep Tincture lasts to the door or the first death**, no clock, over one hour. Drunk at home it waits for the
    next walk; it covers a whole 🏕 run.
 7. **The bitter tincture (🌱 + 🪶, half the encounters) was not picked.** 🐾 Кіготь has no recipe.
-8. **A tincture's icon is the flask and its plant** (the owner, on the test bot): 🧪🌼 for both heals, 🧪🌿, 🧪🌸. The bag's
+8. **A tincture's icon is the flask and its plant** (the owner, on the test bot): 🧪🌼 for both heals, 🧪🌿, 🧪🌸. *(2026-11-09: her list's buttons leave out the 🧪 to make room for «✅» after the name; the item's icon is unchanged.)* The bag's
    category stays 🧪.
 9. **Міцна настоянка чебрецю, «все ж таки» — the same evening, the last change.** 3× 🌿 + 1× 🌱 + 1× 🪶, 30 🪙: +30% Vigor at once
    and every Vigor cost halved for an hour. The owner took the recommended recipe and the name, and added the +30% over the

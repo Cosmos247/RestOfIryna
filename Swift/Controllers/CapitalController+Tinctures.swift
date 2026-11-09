@@ -57,19 +57,25 @@ extension CapitalController {
     // MARK: - The list
 
     func editToTinctures(messageId: Int, isPhoto: Bool, context: Context) async {
-        let screen = tinctureScreen(lingo: context.lingo, locale: context.session.locale)
+        // Best-effort, like every edit here: a failed read only hides the marks.
+        let held = (try? await TinctureService.heldForList(for: context.session, on: context.db)) ?? [:]
+        let screen = tinctureScreen(held: held, silver: context.session.silver, lingo: context.lingo, locale: context.session.locale)
         await editTinctureScreen(screen.text, rows: screen.rows, messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
     /// The list's text and buttons — no database, so what the player reads is a
-    /// value.
-    func tinctureScreen(lingo: Lingo, locale: String) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
+    /// value. A label leaves out the flask (the owner, 2026-11-09): the screen's
+    /// title carries it, and the longest name would otherwise lose its «✅».
+    func tinctureScreen(held: [String: Int], silver: Int, lingo: Lingo,
+                        locale: String) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
         let text = "<b>\(lingo.localize("tincture.title", locale: locale))</b>\n\n"
             + lingo.localize("tincture.body", locale: locale) + "\n\n"
             + "<i>\(lingo.localize("tincture.quote", locale: locale))</i>"
         var rows = TinctureService.recipes.map { recipe in
-            [TGInlineKeyboardButton(text: itemLabel(recipe.output.itemId, lingo: lingo, locale: locale),
-                                    callbackData: "tincture:card:\(recipe.id)")]
+            let label = itemLabel(recipe.output.itemId, lingo: lingo, locale: locale)
+            let plain = label.hasPrefix("🧪") ? String(label.dropFirst()) : label
+            return [TGInlineKeyboardButton(text: ReadyMark.label(plain, ready: ReadyChecks.recipe(recipe, held: held, silver: silver)),
+                                           callbackData: "tincture:card:\(recipe.id)")]
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.back", locale: locale),
                                             callbackData: "fortune:show")])

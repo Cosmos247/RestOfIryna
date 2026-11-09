@@ -2161,6 +2161,13 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-09, night — «✅» after a button's name (NOT LIVE; Swift only, no copy, no migration, the digest unmoved). The checks ran against a scratch Postgres; no screen has been drawn in Telegram:**
+- [ ] The fortune teller's «🧪 Настоянки»: no 🧪 on the five buttons, ✅ after the name only where the card's lines are all green; one unit or one silver short, nothing. Does «Середня настоянка зцілення ✅» fit on a narrow phone?
+- [ ] With the wagon in town the tinctures count its cargo; ridden out «🐎 Верхи», they do not.
+- [ ] The kitchen and the workshop's recipes, the Master's «✨ Покращення» rows and the plot picker's two columns.
+- [ ] One button each: «🏠 Розбудувати маєток», «⚔️ Перекувати зброю», «🎒 Покращити сумку», «🔨 Урок: перекувати зброю», the Training Ground's next level, and its button in the house while unbuilt (once built, that one carries no mark).
+- [ ] A full bag with every ingredient: ✅ stays, and the tap's refusal says there is no room.
+
 **Added 2026-11-09, later — a double tap on three ladders pays once (NOT LIVE; Swift only, no migration, the digest unmoved). Rehearsed on a scratch Postgres at the service level; the buttons' new callbacks have not run in Telegram:**
 - [ ] «✨ Покращити» at the Master: tap «так» twice fast: one level, one payment, one banner. Then the next level asked for properly works.
 - [ ] Покращення маєтку: two fast taps move the estate one tier and take one recipe. The same for the Training Ground's build or next level.

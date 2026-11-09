@@ -37,6 +37,7 @@ the wagon is left behind. 599 tests.
 `spec-horse.md`). Every trip set out while its hire runs takes 1 min 30 s, for 1 год / 3 год / 1 день / 7 днів at 50 / 100 / 340 / 1,080 🪙; a wagon alongside
 keeps its 3 min; alone it asks nothing at the door. Its end is one notice from the watchman. A double tap on «✅ Найняти» pays once, the wagon's too (`WagonMath.hireStamp`). The digest moved `records` alone. 612 tests.
 **A double tap** (2026-11-09, later, NOT LIVE, Swift only): the Master's enchant, the estate upgrade and the Training Ground each pay once now; four other live buttons still can pay twice (`TODO.md` → Open).
+**«✅» after a button's name** (2026-11-09, night, NOT LIVE, Swift only; `ReadyMark`, `ReadyChecks`): when every line on the card behind it is green, on the recipes, the armour's enchant, the plot picker and the single upgrades. The tincture list has no 🧪.
 
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
@@ -1222,7 +1223,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **612 tests** (2026-11-09, the Rysak; 599 at the wagon and its door). Pace is **136–151 days** to level 40 in the tree since the hazel
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **619 tests** (2026-11-09, the check marks; 612 at the Rysak, 599 at the wagon and its door). Pace is **136–151 days** to level 40 in the tree since the hazel
 (2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

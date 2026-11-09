@@ -775,7 +775,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // since the ground became a room of the house (2026-09-27).
         let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
         let body = estate.renderTrainingGround(session: context.session, learned: learned, lingo: lingo, locale: locale)
-        let markup = estate.trainingGroundKeyboard(session: context.session, lingo: lingo, locale: locale)
+        let upgradeReady = ReadyChecks.training(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
+        let markup = estate.trainingGroundKeyboard(session: context.session, upgradeReady: upgradeReady, lingo: lingo, locale: locale)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
         // The ground's screen carries inline markup, so the combat reply keyboard
         // would otherwise linger — restore the main keyboard on the banner.

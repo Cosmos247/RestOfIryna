@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 612 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 619 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -332,6 +332,7 @@ RestOfIryna/
 │   │   ├── EphemeralChatState.swift  # in-memory actor — the trip's road card id (2026-10-08), exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), pending Market-listing (qty→price, Phase 6.5) + Trade-input (silver/qty, Phase 6.5) state, latest status-banner message ID per user
 │   │   ├── WagonDisplay.swift        # 2026-11-08 — the wagon phrased once: its lengths, «🫏 Віз: 150/200 · ще 2год 41хв», its button
 │   │   ├── HorseDisplay.swift        # 2026-11-09 — the Rysak's icon and «🐴 Рисак: ще 2год 58хв»
+│   │   ├── ReadyChecks.swift         # 2026-11-09 — whether a button earns its «✅»: what its card prints, from where that card counts
 │   │   ├── Countdown.swift           # 2026-09-09 (days since 2026-11-08) — the one "time left" format: `2год 5хв` · `1хв 22сек` · `5хв` · `42сек` (two most significant units; 2026-09-11 extended that rule to minutes+seconds, which had printed minutes alone). Replaced an MM:SS / HH:MM pair no screen could tell apart; every countdown and every authored duration now prints from here
 │   │   ├── ItemCard.swift            # 2026-09-09 — the "what am I buying" card shown between a shop listing and the purchase question (Trader · Master · Tavern · Market). Name, lore and what it grants, read from the item's own effects / ladder rung
 │   │   ├── FortuneDisplay.swift      # 2026-09-09 — what the drawn tarot card is doing, GENERATED from its `FortuneEffect`; `oneShotLine` reads the stamped record instead, because only that knows which way the Wheel fell. Since 2026-10-04 the reveal prints through it too — no locale key carries a card's numbers
@@ -823,6 +824,7 @@ card, `266d28e`, went with it):
   both ways. It waits in the yard during a walk. At home it is loaded and unloaded at the warehouse; in
   town the trader, the Master, the fortune teller, the jobs, the market, the guild vault and a trade take from the bag first and
   the wagon for the rest. An ended hire sends the cargo to the warehouse (`content/spec/spec-wagon.md`).
+- A ✅ after a button's name says everything its card asks for is in hand: on recipes, the armour's enchant, the plot picker and the single upgrades.
 - A double tap on the Master's enchant, the estate upgrade or the Training Ground pays once: each confirmation names the level it showed.
 - The same stable hires a faster horse («🐴 Рисак») for the same four lengths at 50 / 100 / 340 / 1080 silver: every trip set out while
   it runs takes 1 min 30 s instead of 2. With the wagon alongside the road stays 3 minutes (`content/spec/spec-horse.md`).

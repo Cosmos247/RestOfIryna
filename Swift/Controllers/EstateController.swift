@@ -181,7 +181,8 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         let text = renderRoot(session: context.session, lingo: context.lingo)
-        let inline = rootKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: context.session.locale)
+        let upgradeReady = ReadyChecks.estateUpgrade(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
+        let inline = rootKeyboard(estateLevel: context.session.estateLevel, upgradeReady: upgradeReady, lingo: context.lingo, locale: context.session.locale)
 
         // Per-level artwork at `Assets/estate/level_<N>.jpg`.
         // `sendCachedPhoto` reuses Telegram's file_id cache; the photo is
@@ -213,7 +214,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return "🏰 <b>\(title) «\(estateName)»</b>\n\(levelLabel): <b>\(level)</b>\n\n\(description)"
     }
 
-    fileprivate func rootKeyboard(estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func rootKeyboard(estateLevel: Int, upgradeReady: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let home = lingo.localize("estate.home", locale: locale)
         let plot = lingo.localize("estate.plot", locale: locale)
         var rows: [[TGInlineKeyboardButton]] = [[
@@ -224,7 +225,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // catalog's max tier. Player still has to pay materials + meet the
         // player-level gate (`EstateUpgradeService` validates both).
         if EstateUpgradeCatalog.canUpgrade(from: estateLevel) {
-            let upgrade = lingo.localize("estate.upgrade.button", locale: locale)
+            let upgrade = ReadyMark.label(lingo.localize("estate.upgrade.button", locale: locale), ready: upgradeReady)
             rows.insert([TGInlineKeyboardButton(text: upgrade, callbackData: "estate:upgrade:detail")], at: 0)
         }
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
@@ -329,7 +330,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// Workshop at T3. Locked buttons are simply absent — the callback
     /// handlers also defend with a modal alert if a stale callback fires
     /// (e.g. the player tapped a button rendered before they regressed).
-    fileprivate func homeKeyboard(estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// `trainingReady`: the Training Ground is unbuilt and its build card is all
+    /// green. Once built, this button only opens the room.
+    fileprivate func homeKeyboard(estateLevel: Int, trainingReady: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let workshop = lingo.localize("estate.workshop", locale: locale)
         let kitchen = lingo.localize("estate.kitchen", locale: locale)
         let warehouse = lingo.localize("estate.warehouse", locale: locale)
@@ -344,7 +347,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         rows.append([TGInlineKeyboardButton(text: warehouse, callbackData: "estate:home:warehouse")])
         // 2026-09-27 — the Training Ground moved off the plots into the house.
         if estateLevel >= EstateTierGates.trainingGround {
-            let training = lingo.localize("estate.training.title", locale: locale)
+            let training = ReadyMark.label(lingo.localize("estate.training.title", locale: locale), ready: trainingReady)
             rows.append([TGInlineKeyboardButton(text: training, callbackData: "estate:home:training")])
         }
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:root")])
@@ -850,13 +853,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
 
     /// Picker keyboard — one button per plot type + Back to plot list. Phase
     /// 5.3c: Training Ground hidden until estate T3.
-    fileprivate func plotPickerKeyboard(slot: Int, estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func plotPickerKeyboard(slot: Int, estateLevel: Int, ready: Set<PlotType>, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         var pair: [TGInlineKeyboardButton] = []
         for type in PlotCatalog.buildableTypes {
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
-            let label = "\(icon) \(typeName)"
+            let label = ReadyMark.label("\(icon) \(typeName)", ready: ready.contains(type))
             pair.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:type:\(slot):\(type.rawValue)"))
             if pair.count == 2 {
                 rows.append(pair)
@@ -887,20 +890,21 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// listed since 2026-09-28 — nobody crafts armour, the Master sells it.
     /// Kitchen recipes never appear here (they live in the Kitchen view, gated
     /// by the room's T2 unlock).
-    fileprivate func workshopKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func workshopKeyboard(held: [String: Int], silver: Int, weaponReady: Bool, bagReady: Bool,
+                                      lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         // Phase 5.2.2 weapon-upgrade entry. One universal button at the top —
         // the player has only one upgradable weapon (their class starter),
         // so the detail screen resolves it dynamically; no class-specific
         // labels needed here.
-        let upgradeLabel = lingo.localize("weapon.upgrade.button", locale: locale)
+        let upgradeLabel = ReadyMark.label(lingo.localize("weapon.upgrade.button", locale: locale), ready: weaponReady)
         rows.append([TGInlineKeyboardButton(text: upgradeLabel, callbackData: "weapon:upgrade:detail")])
 
         // Phase 5.3d bag-upgrade entry. Same universal-button pattern; the
         // detail screen reads `User.bagTier` dynamically. The button stays
         // visible at max tier so the detail screen can render the "fully
         // upgraded" message.
-        let bagUpgradeLabel = lingo.localize("bag.upgrade.button", locale: locale)
+        let bagUpgradeLabel = ReadyMark.label(lingo.localize("bag.upgrade.button", locale: locale), ready: bagReady)
         rows.append([TGInlineKeyboardButton(text: bagUpgradeLabel, callbackData: "bag:upgrade:detail")])
 
         // 2026-09-27 — taking a piece apart, the reverse of its pattern and the
@@ -918,7 +922,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             let outputIcon = outputItem?.icon ?? ""
             let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
             let iconSegment = outputIcon.isEmpty ? "" : "\(outputIcon) "
-            let label = "\(iconSegment)\(outputName)"
+            let label = ReadyMark.label("\(iconSegment)\(outputName)", ready: ReadyChecks.recipe(recipe, held: held, silver: silver))
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "craft:detail:\(recipe.id)")])
         }
         let back = lingo.localize("estate.back_home", locale: locale)
@@ -1066,14 +1070,15 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// Kitchen keyboard — one `[<icon> <name>]` button per **learned** kitchen
     /// recipe + Back. Empty list (no learned kitchen recipes) just shows the
     /// Back button.
-    fileprivate func kitchenKeyboard(learnedRecipeIds: Set<String>, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func kitchenKeyboard(learnedRecipeIds: Set<String>, held: [String: Int], silver: Int,
+                                     lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         for recipe in RecipeCatalog.recipes(in: .kitchen) where learnedRecipeIds.contains(recipe.id) {
             let outputItem = ItemCatalog.find(recipe.output.itemId)
             let outputIcon = outputItem?.icon ?? ""
             let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
             let iconSegment = outputIcon.isEmpty ? "" : "\(outputIcon) "
-            let label = "\(iconSegment)\(outputName)"
+            let label = ReadyMark.label("\(iconSegment)\(outputName)", ready: ReadyChecks.recipe(recipe, held: held, silver: silver))
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "craft:detail:\(recipe.id)")])
         }
         let back = lingo.localize("estate.back_home", locale: locale)
@@ -1286,10 +1291,15 @@ extension EstateController {
             switch data {
             case "estate:root":
                 text = ctrl.renderRoot(session: context.session, lingo: context.lingo)
-                inline = ctrl.rootKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: locale)
+                let upgradeReady = ReadyChecks.estateUpgrade(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
+                inline = ctrl.rootKeyboard(estateLevel: context.session.estateLevel, upgradeReady: upgradeReady, lingo: context.lingo, locale: locale)
             case "estate:home":
                 text = ctrl.renderHome(lingo: context.lingo, locale: locale)
-                inline = ctrl.homeKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: locale)
+                var trainingReady = false
+                if context.session.trainingGroundLevel == 0, context.session.estateLevel >= EstateTierGates.trainingGround {
+                    trainingReady = ReadyChecks.training(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
+                }
+                inline = ctrl.homeKeyboard(estateLevel: context.session.estateLevel, trainingReady: trainingReady, lingo: context.lingo, locale: locale)
             case "estate:home:workshop" where context.session.estateLevel < EstateTierGates.workshop:
                 // Stale callback: room not unlocked yet. Surface a clean alert
                 // and leave the screen as-is. 🔒 prepended in Swift — leading
@@ -1315,14 +1325,20 @@ extension EstateController {
                 inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             case "estate:home:workshop":
                 text = ctrl.renderWorkshop(lingo: context.lingo, locale: locale)
-                inline = ctrl.workshopKeyboard(lingo: context.lingo, locale: locale)
+                let held = try await ReadyChecks.held(for: context.session, on: context.db)
+                inline = ctrl.workshopKeyboard(held: held, silver: context.session.silver,
+                                               weaponReady: try await ReadyChecks.weaponUpgrade(context.session, held: held, on: context.db),
+                                               bagReady: ReadyChecks.bagUpgrade(context.session, held: held),
+                                               lingo: context.lingo, locale: locale)
             case "estate:home:kitchen":
                 let learnedIds = try await LearnedRecipe.allIds(for: context.session, on: context.db)
                 // Always-available starters union with player-learned recipes.
                 let availableIds = learnedIds.union(RecipeCatalog.starterRecipeIds)
                 let availableKitchen = RecipeCatalog.recipes(in: .kitchen).filter { availableIds.contains($0.id) }.count
                 text = ctrl.renderKitchen(learnedKitchenCount: availableKitchen, lingo: context.lingo, locale: locale)
-                inline = ctrl.kitchenKeyboard(learnedRecipeIds: availableIds, lingo: context.lingo, locale: locale)
+                inline = ctrl.kitchenKeyboard(learnedRecipeIds: availableIds,
+                                              held: try await ReadyChecks.held(for: context.session, on: context.db),
+                                              silver: context.session.silver, lingo: context.lingo, locale: locale)
             case "estate:home:warehouse":
                 // Per-unit (2026-05-12): sums quantities, not rows — and names
                 // the wagon in the yard (2026-11-08) while there is one.
@@ -2263,7 +2279,13 @@ extension EstateController {
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         let estateLevel = context.session.estateLevel
         let body = ctrl.renderPlotPicker(slot: slot, estateLevel: estateLevel, lingo: context.lingo, locale: locale)
-        let inline = ctrl.plotPickerKeyboard(slot: slot, estateLevel: estateLevel, lingo: context.lingo, locale: locale)
+        // Each type's cost for the player's next plot, what its build card prints.
+        let plotNumber = try await PlotService.nextPlotNumber(for: context.session, on: context.db)
+        let held = try await ReadyChecks.held(for: context.session, on: context.db)
+        let ready = Set(PlotCatalog.buildableTypes.filter { type in
+            ReadyMark.covers(PlotCatalog.buildCost(for: type, plotNumber: plotNumber).map { ($0.itemId, $0.quantity) }, held: held)
+        })
+        let inline = ctrl.plotPickerKeyboard(slot: slot, estateLevel: estateLevel, ready: ready, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
         return true
     }
@@ -2656,7 +2678,8 @@ extension EstateController {
         let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
         let ctrl = Controllers.estateController
         let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: context.session.locale)
-        let inline = ctrl.trainingGroundKeyboard(session: context.session, lingo: context.lingo, locale: context.session.locale)
+        let upgradeReady = ReadyChecks.training(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
+        let inline = ctrl.trainingGroundKeyboard(session: context.session, upgradeReady: upgradeReady, lingo: context.lingo, locale: context.session.locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
     }
 
@@ -2800,14 +2823,14 @@ extension EstateController {
 
     /// `[⬆️ Raise to level N]` while there is a next level, then the practice
     /// fight and the way back to the house.
-    func trainingGroundKeyboard(session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    func trainingGroundKeyboard(session: User, upgradeReady: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         if TrainingGroundCatalog.level(session.trainingGroundLevel + 1) != nil {
             // ⬆️ carries VS16 — prepended in Swift, never in the template.
             let label = "⬆️ " + lingo.localize("estate.training.button.upgrade", locale: locale, interpolations: [
                 "level": "\(session.trainingGroundLevel + 1)"
             ])
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "estate:training:upgrade")])
+            rows.append([TGInlineKeyboardButton(text: ReadyMark.label(label, ready: upgradeReady), callbackData: "estate:training:upgrade")])
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("estate.training.button.spar", locale: locale),
                                             callbackData: "estate:training:spar")])

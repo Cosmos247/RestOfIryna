@@ -784,6 +784,11 @@ two fast taps both run, the second after the first). A ladder's yes carries the 
 `estate:upgrade:confirm:<tier>`, `estate:training:confirm:<level>`) and a mismatch is `.stale`: redraw, pay nothing. Never let a yes
 read "the next rung" off the current state. Still open: `project-double-tap-audit`.
 
+**«✅» after a button's name means every line on the card behind it is green** (2026-11-09, a player's idea, the owner's shape):
+recipes, the armour's enchant, the plot picker and the single upgrades; `ReadyMark` writes it, `ReadyChecks` asks what that card prints,
+from where it counts. Nothing is shown when something is short, a full bag does not take it away, and the silver-only lists carry none.
+The tincture list leaves out the 🧪, because Telegram cuts a long label from its end. A new list of cards gets the same check.
+
 **A dead inline button is the house symptom, and it has two causes.** A **throw** out of a
 callback handler spins it forever — nothing answers `answerCallbackQuery`. A callback **no
 handler claims** is just as silent: `Router.process` reaches `unmatched` only when
