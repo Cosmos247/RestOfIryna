@@ -22,6 +22,9 @@ public enum EstateUpgradeService {
 
     public enum UpgradeResult: Sendable {
         case success(newTier: Int)
+        /// The estate is no longer at the tier the screen showed: the second of
+        /// a double tap, or a button left in chat. Nothing is spent.
+        case stale
         /// Estate is already at `EstateUpgradeCatalog.maxTier`.
         case maxTierReached(tier: Int)
         /// Player hasn't hit the player-level requirement for the next tier
@@ -47,8 +50,11 @@ public enum EstateUpgradeService {
     ///   4. Drain inputs (inventory first, warehouse second).
     ///   5. Bump `user.estateLevel`, `saveAndCache`.
     @discardableResult
-    public static func upgrade(for user: User, on db: any Database) async throws -> UpgradeResult {
+    public static func upgrade(for user: User, seenTier: Int, on db: any Database) async throws -> UpgradeResult {
         guard let userId = user.id else { return .maxTierReached(tier: user.estateLevel) }
+        // Without this a double tap buys the NEXT tier (2026-11-09), and the
+        // forest's creatures follow the estate's tier.
+        guard user.estateLevel == seenTier else { return .stale }
 
         // 1. Catalog lookup.
         guard let nextStep = EstateUpgradeCatalog.nextStep(from: user.estateLevel) else {

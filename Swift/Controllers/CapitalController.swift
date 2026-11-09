@@ -1307,7 +1307,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // The journal's «📌» under the question — keyed by the piece and the
         // level, not this row, so a warehouse trip does not lose it.
         let pinned = try await RecipeNoteService.isPinned(.enchant(row.itemId, toLevel: step.level), for: context.session, on: context.db)
-        let confirm = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
+        let confirm = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString):\(row.enchantLevel)", no: "master:enchantlist", lingo: lingo, locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: confirm.inlineKeyboard + [
             RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "master:pin:enchant:\(entryId.uuidString)", lingo: lingo, locale: locale)
         ])
@@ -1384,7 +1384,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case .maxLevel:
             await alert(lingo.localize("capital.master.max_level", locale: locale))
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)
-        case .notArmor:
+        case .notArmor, .stale:
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)
         }
@@ -2209,8 +2209,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Not answered up front: a refusal answers with a modal, and a callback
         // can be answered only once.
         if data.hasPrefix("master:enchantok:") {
-            let idStr = String(data.dropFirst("master:enchantok:".count))
-            guard let id = UUID(uuidString: idStr) else {
+            // `<row>:<level>`: the level the question showed. A bare `<row>` is a
+            // question from before 2026-11-09 and redraws the list, paying nothing.
+            let parts = data.dropFirst("master:enchantok:".count).split(separator: ":").map(String.init)
+            guard parts.count == 2, let id = UUID(uuidString: parts[0]), let seenLevel = Int(parts[1]) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
                 return true
@@ -2220,7 +2222,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // way out.
             let result: MasterService.EnchantResult
             do {
-                result = try await MasterService.enchant(entryId: id, for: context.session, on: context.db)
+                result = try await MasterService.enchant(entryId: id, seenLevel: seenLevel, for: context.session, on: context.db)
             } catch {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 throw error

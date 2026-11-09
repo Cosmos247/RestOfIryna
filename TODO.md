@@ -2161,6 +2161,11 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-09, later — a double tap on three ladders pays once (NOT LIVE; Swift only, no migration, the digest unmoved). Rehearsed on a scratch Postgres at the service level; the buttons' new callbacks have not run in Telegram:**
+- [ ] «✨ Покращити» at the Master: tap «так» twice fast: one level, one payment, one banner. Then the next level asked for properly works.
+- [ ] Покращення маєтку: two fast taps move the estate one tier and take one recipe. The same for the Training Ground's build or next level.
+- [ ] A question left in chat from before the restart: a redraw, nothing paid, on all three.
+
 **Added 2026-11-09 — the stable's Rysak «🐴 Рисак» (NOT LIVE; Swift + `stable.json` → `horse` under schema v33 + uk/en + `CreateHorses`; `content/spec/spec-horse.md`). `swift test` reaches the arithmetic and the validator; the hire, the crossings and the screens' text were rehearsed on a scratch Postgres, never in Telegram, so this block is the proof:**
 - [ ] «🐎 Стайня» on Поділ: the carter's new line, «🐴 Рисак — дорога 1хв 30сек замість 2хв…» above the wagon's, the buttons in two columns: 🐴 on the left, 🫏 on the right. Поділ's caption ends «наймають рисака чи віз під товар».
 - [ ] «🐴 3 год · 100 🪙»: the question ending in «✅ 🪙 Срібло (N/100)»; «❌ Ні» goes back and takes nothing; «✅ Найняти»: the banner «🐴 Рисака найнято на 3 год · −100 🪙», the stable redrawn with «🐴 Рисак ваш ще …» and «🐴 +1 год · 50 🪙». Short of silver: the modal, nothing taken. Two fast taps on «✅ Найняти»: one payment, one banner, the end moved once, for the wagon too. A stable button from chat history at home or on the road: the message is deleted (the main router's default, the wagon's too).
@@ -3508,6 +3513,7 @@ unrelated commit on purpose.
 **From the 2026-11-08 session (the wagon):**
 - **A separate zlatnyk wagon that rides faster** (the owner, 2026-11-09: «Потім буде окремий, донатний віз, який йде швидше»): not designed, build
   nothing until asked. Under 2 minutes it needs its own rule, because `stable.wagon_faster_than_road` refuses any wagon faster than the road.
+- **Four live paid buttons can still pay twice** (the owner took the three worst first, 2026-11-09): the Master's armour (`master:buyok:`), a tincture (`tincture:brew:`), a tavern dish (`tavern:food:buy:`), a tavern roll (`tavern:roll:`). Each delivers what it charged for. The shape to use is a yes that carries the balance it saw. Materials only, same shape, not read in detail: `weapon:upgrade:confirm`, `bag:upgrade:confirm`.
 - **Trips are recorded nowhere**, so what a day's or a week's hire of the Rysak saves is unmeasured (`spec-horse.md` §5).
 - **Gear on the wagon is read by no place in town** (the build's own limit, spec §3.4): the Master's repair and enchant and a trade's
   gear name the bag's rows. Offer, if a player asks, the Master reading wagon copies too.

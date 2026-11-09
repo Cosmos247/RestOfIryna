@@ -36,6 +36,7 @@ the wagon is left behind. 599 tests.
 **2026-11-09 — the stable's Rysak «🐴 Рисак»** (Swift + `stable.json` → `horse` under schema v33 + uk/en + `CreateHorses`, NOT LIVE, ships with the wagon;
 `spec-horse.md`). Every trip set out while its hire runs takes 1 min 30 s, for 1 год / 3 год / 1 день / 7 днів at 50 / 100 / 340 / 1,080 🪙; a wagon alongside
 keeps its 3 min; alone it asks nothing at the door. Its end is one notice from the watchman. A double tap on «✅ Найняти» pays once, the wagon's too (`WagonMath.hireStamp`). The digest moved `records` alone. 612 tests.
+**A double tap** (2026-11-09, later, NOT LIVE, Swift only): the Master's enchant, the estate upgrade and the Training Ground each pay once now; four other live buttons still can pay twice (`TODO.md` → Open).
 
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —

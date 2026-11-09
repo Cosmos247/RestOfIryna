@@ -44,6 +44,9 @@ public enum MasterService {
         case notEnoughSilver(have: Int, need: Int)
         case missingMaterials(itemId: String, have: Int, need: Int)
         case notArmor
+        /// The piece is no longer at the level the question saw: the second of
+        /// a double tap, or a question left in chat. Nothing is spent.
+        case stale
     }
 
     // MARK: - Helpers
@@ -134,11 +137,14 @@ public enum MasterService {
     /// written on (`WeaponUpgradeService.reforge`). Until 2026-10-05 this counted
     /// the estate's warehouse too and drew from it remotely, so a player with
     /// 0 hides in the bag was told «маєте 14» and could not tell where they were.
-    public static func enchant(entryId: UUID, for user: User, on db: any Database) async throws -> EnchantResult {
+    public static func enchant(entryId: UUID, seenLevel: Int, for user: User, on db: any Database) async throws -> EnchantResult {
         guard user.id != nil else { return .notArmor }
         guard let row = try await ownedRow(entryId, for: user, on: db), isArmor(row.itemId) else {
             return .notArmor
         }
+        // Without this a double tap buys the NEXT level (2026-11-09): the yes
+        // names the level its question showed, as the bag's `drop1ok` does.
+        guard row.enchantLevel == seenLevel else { return .stale }
         guard let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else {
             return .maxLevel
         }

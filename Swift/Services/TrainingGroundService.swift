@@ -24,6 +24,9 @@ public enum TrainingGroundService {
         /// `built` when this was level 1; `caughtUp` when the level climbed
         /// past the one paid for.
         case success(level: Int, taught: String?, built: Bool, caughtUp: Bool)
+        /// The ground is no longer at the level the card showed: the second of
+        /// a double tap, or a card left in chat. Nothing is spent.
+        case stale
         case maxLevel
         case estateTooLow(required: Int)
         case playerLevelTooLow(required: Int, current: Int)
@@ -31,11 +34,13 @@ public enum TrainingGroundService {
         case missingMaterials(shortages: [CraftingService.Shortage])
     }
 
-    public static func upgrade(for user: User, on db: any Database) async throws -> UpgradeResult {
+    public static func upgrade(for user: User, seenLevel: Int, on db: any Database) async throws -> UpgradeResult {
         guard let userId = user.id else { return .maxLevel }
         guard user.estateLevel >= EstateTierGates.trainingGround else {
             return .estateTooLow(required: EstateTierGates.trainingGround)
         }
+        // Without this a double tap buys the NEXT level (2026-11-09).
+        guard user.trainingGroundLevel == seenLevel else { return .stale }
         guard let next = TrainingGroundCatalog.level(user.trainingGroundLevel + 1) else { return .maxLevel }
 
         let floor = TrainingGroundCatalog.playerLevel(for: next)

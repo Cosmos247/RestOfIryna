@@ -779,6 +779,11 @@ picker message in chat history lands on the safe path. This is the shape every b
 has — list → detail → act, and `ItemCard` before every purchase. Auto-memory
 `project-plot-streams-and-dead-lore`.
 
+**The game has no callback dedupe, so a yes that spends must name what its question showed** (2026-11-09, found by audit:
+two fast taps both run, the second after the first). A ladder's yes carries the level or tier (`master:enchantok:<row>:<level>`,
+`estate:upgrade:confirm:<tier>`, `estate:training:confirm:<level>`) and a mismatch is `.stale`: redraw, pay nothing. Never let a yes
+read "the next rung" off the current state. Still open: `project-double-tap-audit`.
+
 **A dead inline button is the house symptom, and it has two causes.** A **throw** out of a
 callback handler spins it forever — nothing answers `answerCallbackQuery`. A callback **no
 handler claims** is just as silent: `Router.process` reaches `unmatched` only when

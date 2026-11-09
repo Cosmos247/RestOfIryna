@@ -823,6 +823,7 @@ card, `266d28e`, went with it):
   both ways. It waits in the yard during a walk. At home it is loaded and unloaded at the warehouse; in
   town the trader, the Master, the fortune teller, the jobs, the market, the guild vault and a trade take from the bag first and
   the wagon for the rest. An ended hire sends the cargo to the warehouse (`content/spec/spec-wagon.md`).
+- A double tap on the Master's enchant, the estate upgrade or the Training Ground pays once: each confirmation names the level it showed.
 - The same stable hires a faster horse («🐴 Рисак») for the same four lengths at 50 / 100 / 340 / 1080 silver: every trip set out while
   it runs takes 1 min 30 s instead of 2. With the wagon alongside the road stays 3 minutes (`content/spec/spec-horse.md`).
 

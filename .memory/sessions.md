@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-09)* **the stable's Rysak «🐴 Рисак», and `ea9db6e`'s hash fill** — Swift + `stable.json` → `horse` (schema stays v33, no v33 binary deployed) + uk/en + `CreateHorses`
+- *(this commit, 11-09)* **a double tap pays once on the enchant, the estate and the Training Ground, and `334ecc5`'s hash fill** — Swift only, NOT deployed, no migration, the digest unmoved: each
+  yes names the level or tier its question showed, a mismatch is `.stale`. 612 tests.
+- `334ecc5` (11-09) **the stable's Rysak «🐴 Рисак», and `ea9db6e`'s hash fill** — Swift + `stable.json` → `horse` (schema stays v33, no v33 binary deployed) + uk/en + `CreateHorses`
   (one new table), NOT deployed, ships with the wagon: every trip set out while its hire runs takes 1 min 30 s, 50 / 100 / 340 / 1,080 🪙 for the wagon's four lengths, the wagon
   setting the pace when it rides along (`content/spec/spec-horse.md`); the stable's buttons a column per offer; a double tap on «✅ Найняти» pays once, the wagon's too. 612 tests; the digest moved `records` alone (`44ac628c24ed47be`, content hash `0b82dc59`, COMBINED `40f970baec4a21ce`).
 - `ea9db6e` (11-08) **the estate's door asks «🐎 Верхи» or «🫏 З возом», and `f5f90b6`'s hash fill** — Swift + uk/en + `AddWagonLeftHome` (one column with a default),
@@ -1040,7 +1042,13 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-09 (the stable's Rysak «🐴 Рисак») — *(this commit)*
+## Session — 2026-11-09, later (a double tap on the paid buttons) — *(this commit)*
+
+**The ask:** a side agent's note, relayed: the stable's double charge had only been looked for in that work's own diff. The owner: start the test bot and audit the buttons. **Read-only audit** of every `silver -=` and zlatnyk spend, each traced to its callback: seven live buttons can pay twice (enchant, estate upgrade, Training Ground, Master's armour, tincture, tavern dish, tavern roll); the rest are protected by their state or a consumed prompt (list: auto-memory `project-double-tap-audit`). No purchase log exists, so whether it has happened cannot be read. **The owner took the three worst.** Each yes now names what its question showed (`master:enchantok:<row>:<level>`, `estate:upgrade:confirm:<tier>`, `estate:training:confirm:<level>`); a mismatch is `.stale`, a bare old-form button only redraws. The estate's confirm also answers on a throw now.
+
+**Verified:** build, 612 tests, `validate --strict`, the digest unmoved. **Rehearsed on a scratch Postgres:** 110 checks, a double tap on each ladder paying once and the next rung still buyable when asked for; three mutants, each caught (without the guard the second tap took level 2 of the enchant, tier 3 of the estate, level 2 of the ground). **Not run:** the new callback shapes in Telegram; `TODO.md`'s top block is the proof. The test bot ran from 22:12 on `334ecc5` and needs a restart to carry this.
+
+## Session — 2026-11-09 (the stable's Rysak «🐴 Рисак») — `334ecc5`
 
 **The ask** («Виходячи з того, які рішення я прийняв при розробці возу, запропонуй мені рішення для швидшого коня»): a proposal that mapped each wagon decision onto the horse, the
 road minutes on the wagon's own measured players, a played sample and five forks. **Decided by quiz, two rounds:** 3 min with the wagon whether or not the horse is hired («Поки 3хв.

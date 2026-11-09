@@ -296,16 +296,19 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
+    /// `<prefix><tier>`: the tier the screen showed, so a second tap pays nothing.
+    fileprivate static let estateUpgradeConfirmPrefix = "estate:upgrade:confirm:"
+
     /// Detail-screen keyboard. At max tier, only Back. Otherwise [🏠 Upgrade],
     /// the journal's «📌» and Back. Upgrade button is always shown — the handler
     /// validates player level + materials and surfaces a modal alert on
     /// failure, so the player reads exactly what's missing instead of guessing
     /// why the button is grey. `pinned` is nil when there is no step to pin.
-    fileprivate func estateUpgradeKeyboard(canUpgrade: Bool, pinned: Bool?, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func estateUpgradeKeyboard(canUpgrade: Bool, tier: Int, pinned: Bool?, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         if canUpgrade {
             let upgrade = lingo.localize("estate.upgrade.button.confirm", locale: locale)
-            rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "estate:upgrade:confirm")])
+            rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "\(Self.estateUpgradeConfirmPrefix)\(tier)")])
         }
         if let pinned {
             rows.append(RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:upgrade:pin", lingo: lingo, locale: locale))
@@ -1141,8 +1144,8 @@ extension EstateController {
         if data == "estate:upgrade:detail" {
             return try await handleEstateUpgradeDetail(query: query, message: message, context: context)
         }
-        if data == "estate:upgrade:confirm" {
-            return try await handleEstateUpgradeConfirm(query: query, message: message, context: context)
+        if data == "estate:upgrade:confirm" || data.hasPrefix(estateUpgradeConfirmPrefix) {
+            return try await handleEstateUpgradeConfirm(data: data, query: query, message: message, context: context)
         }
         // Phase 5.3d bag upgrade — same shape as the weapon/estate upgrades.
         if data == "bag:upgrade:detail" {
@@ -2536,6 +2539,8 @@ extension EstateController {
         }
     }
 
+    fileprivate static let trainingConfirmPrefix = "estate:training:confirm:"
+
     /// Every Training Ground callback. Unbuilt, the building's screen IS the
     /// build card; built, it lists the techniques with the next level's
     /// button, and the card behind that button is the question the confirm
@@ -2578,8 +2583,26 @@ extension EstateController {
                 try await showTrainingUpgrade(message: message, context: context)
             }
 
-        case "estate:training:confirm":
-            switch try await TrainingGroundService.upgrade(for: context.session, on: context.db) {
+        // `estate:training:confirm:<level>`: the level the card showed, so a
+        // second tap pays nothing. The bare form is a card from before
+        // 2026-11-09 and takes `default` below, which only redraws.
+        case let confirm where confirm.hasPrefix(Self.trainingConfirmPrefix):
+            guard let seenLevel = Int(confirm.dropFirst(Self.trainingConfirmPrefix.count)) else {
+                await answer()
+                try await showTrainingGround(message: message, context: context)
+                return true
+            }
+            let upgraded: TrainingGroundService.UpgradeResult
+            do {
+                upgraded = try await TrainingGroundService.upgrade(for: context.session, seenLevel: seenLevel, on: context.db)
+            } catch {
+                await answer()
+                throw error
+            }
+            switch upgraded {
+            case .stale:
+                await answer()
+                try await showTrainingGround(message: message, context: context)
             case .success(let level, let taught, let built, let caughtUp):
                 await answer()
                 try await showTrainingGround(message: message, context: context)
@@ -2699,7 +2722,7 @@ extension EstateController {
         // The journal's «📌» under the action and Back, which share a row here.
         let pinned = try await RecipeNoteService.isPinned(.training(toLevel: next.level), for: session, on: context.db)
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: act, callbackData: "estate:training:confirm"),
+            [TGInlineKeyboardButton(text: act, callbackData: "\(Self.trainingConfirmPrefix)\(session.trainingGroundLevel)"),
              TGInlineKeyboardButton(text: back, callbackData: building ? "estate:home" : "estate:home:training")],
             RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:training:pin", lingo: lingo, locale: locale)
         ])
@@ -3399,15 +3422,18 @@ extension EstateController {
         let canUpgrade = EstateUpgradeCatalog.canUpgrade(from: context.session.estateLevel)
         let key = EstateUpgradeCatalog.nextStep(from: context.session.estateLevel).map { RecipeNote.Key.estate(toTier: $0.toTier) }
         let pinned = try await notePinned(key, context: context)
-        let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, pinned: pinned, lingo: context.lingo, locale: locale)
+        let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, tier: context.session.estateLevel, pinned: pinned,
+                                                lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
     }
 
-    /// `estate:upgrade:confirm` — perform one tier upgrade. Failure modes
+    /// `estate:upgrade:confirm:<tier>` — perform one tier upgrade. Failure modes
     /// (max tier / player level too low / missing materials) surface as
     /// modal alerts and leave the screen unchanged. Success refreshes the
-    /// screen with the new "current" tier and sends the tier-up bubble.
+    /// screen with the new "current" tier and sends the tier-up bubble. A
+    /// button that names no tier is from before 2026-11-09 and only redraws.
     static func handleEstateUpgradeConfirm(
+        data: String,
         query: TGCallbackQuery,
         message: TGMaybeInaccessibleMessage,
         context: Context
@@ -3417,9 +3443,26 @@ extension EstateController {
         // Read before the upgrade — the banner reports the step it took, and
         // the service has already moved `estateLevel` by the time it returns.
         let previousTier = context.session.estateLevel
-        let result = try await EstateUpgradeService.upgrade(for: context.session, on: context.db)
+        guard data.hasPrefix(estateUpgradeConfirmPrefix),
+              let seenTier = Int(data.dropFirst(estateUpgradeConfirmPrefix.count)) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await showEstateUpgrade(message: message, context: context)
+            return true
+        }
+        let result: EstateUpgradeService.UpgradeResult
+        do {
+            result = try await EstateUpgradeService.upgrade(for: context.session, seenTier: seenTier, on: context.db)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
 
         switch result {
+        case .stale:
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await showEstateUpgrade(message: message, context: context)
+            return true
+
         case .maxTierReached:
             let toast = context.lingo.localize("estate.upgrade.max_tier", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
