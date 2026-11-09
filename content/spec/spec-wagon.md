@@ -92,6 +92,7 @@ A crossing with the wagon: **3 min** (2 min without it).
   «✅ Найняти» spends. The silver and the wagon's row are written in one transaction.
 - **Hiring again while the wagon is yours** adds the new length to the end of the current one
   («🫏 +1 год · 100 🪙»).
+- **A double tap pays once** (2026-11-09): the yes carries what its question saw of the hire (`WagonMath.hireStamp`).
 - **No level or estate gate.** The price is the gate.
 - **Nothing is typed into copy.** Every length, every price and the capacity are printed from
   the data.
@@ -213,9 +214,9 @@ place in town:** the Master's repair and enchant and a trade's gear name the bag
 |---|---|
 | Поділ's keyboard | «🐎 Стайня» |
 | the stable | «🐎 <b>Стайня</b>» · «Візник змащує колесо дьогтем: «Віз під товар? На скільки берете?»» · «🫏 Віз — 200 місць під вантаж. Дорога з ним — 3хв замість 2хв. Що довша оренда, то дешевша година.» *(amended with §2.9–10)* |
-| the stable's buttons | «🫏 1 год · 100 🪙» «🫏 3 год · 190 🪙» / «🫏 1 день · 670 🪙» «🫏 7 днів · 2160 🪙»; while hired «🫏 +1 год · 100 🪙» … |
+| the stable's buttons | the right-hand column since the Rysak (2026-11-09, `spec-horse.md` §4): «🫏 1 год · 100 🪙» / «🫏 3 год · 190 🪙» / «🫏 1 день · 670 🪙» / «🫏 7 днів · 2160 🪙»; while hired «🫏 +1 год · 100 🪙» … |
 | the stable, while hired | «🫏 Віз ваш ще 2год 41хв · на возі 150/200» |
-| the question | «🫏 Найняти віз на 1 день за 670 срібників?» · «Він їздить з вами між маєтком і столицею й везе все, що бере склад, — дорога з ним 3хв замість 2хв. У ліс не йде — чекає на подвір'ї.» *(amended)* · «   ✅ 🪙 Срібло  (2946/670)» · [✅ Найняти] [❌ Ні] |
+| the question | «🫏 Найняти віз на 1 день за 670 срібників?» · «Він їздить з вами між маєтком і столицею й везе все, що бере склад, — дорога з ним 3хв замість 2хв.» *(amended; the owner cut «У ліс не йде — чекає на подвір'ї.» on 2026-11-09, the rule stands)* · «   ✅ 🪙 Срібло  (2946/670)» · [✅ Найняти] [❌ Ні] |
 | the banner | «🫏 Віз найнято на 1 день · −670 🪙» |
 | the estate's door (§2.11) | «🐎 <b>Дорога до столиці</b>» · «🫏 Віз: 150/200 · ще 2год 41хв» · «Верхи — 2хв. Віз чекатиме вдома, вантаж у столиці буде недоступний.» · «З возом — 3хв. Вантаж їде з вами.» · [🐎 Верхи · 2хв] [🫏 З возом · 3хв] |
 | the road card, under the 🐎 line, when it rides along | «🫏 Позаду торохтить віз: 150/200.» |
@@ -323,7 +324,6 @@ the last 7 days.
 
 ## 7. Left open
 
-- **The horse is parked.** If it comes back, `TravelState` must stamp its crossing, because
-  `turnBack` reads the global `travelSeconds`. A turn-back at second 24 of a one-minute ride would
-  otherwise cost 1 min 24 s.
+- **The horse came back on 2026-11-09**, as «🐴 Рисак»: `spec-horse.md`. It feeds the trip's stamp this
+  wagon's §2.9 built, and never speeds the wagon up.
 - **Working names.** The place's name «Стайня» and the English "Wagon" are working names.

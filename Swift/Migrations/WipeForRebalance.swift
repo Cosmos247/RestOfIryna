@@ -63,6 +63,7 @@ struct WipeForRebalance: AsyncMigration {
         "guilds", "guild_invites", "guild_vault",
         "tavern_game_messages",
         "wagons", "wagon_cargo",
+        "horses",
     ]
 
     /// Tables the wipe must not touch and must not judge.

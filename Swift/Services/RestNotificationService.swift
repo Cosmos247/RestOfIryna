@@ -108,6 +108,7 @@ public enum RestNotificationService {
         await notifyZlatnyksCredited(db: db, bot: bot, lingo: lingo)
         await notifyEvents(users: users, db: db, bot: bot, lingo: lingo, now: now)
         await settleWagons(db: db, bot: bot, lingo: lingo, now: now)
+        await announceEndedHorses(db: db, bot: bot, lingo: lingo, now: now)
     }
 
     // MARK: - The wagon's end (2026-11-08)
@@ -133,6 +134,19 @@ public enum RestNotificationService {
             }
         }
         try? await WagonService.settleRemainders(on: db, now: now)
+    }
+
+    // MARK: - The Rysak's end (2026-11-09)
+
+    /// A hire that has run out (`spec-horse.md` §3.5): one line, once. The
+    /// marker is written before this push; a hire moves no goods, so there is
+    /// nothing else to settle.
+    private static func announceEndedHorses(db: any Database, bot: TGBot, lingo: Lingo, now: Date) async {
+        guard let ended = try? await HorseService.announceEnded(on: db, now: now) else { return }
+        for done in ended {
+            await push("\(HorseDisplay.icon) " + lingo.localize("horse.ended.notice", locale: done.locale),
+                       toChat: done.telegramId, bot: bot)
+        }
     }
 
     // MARK: - Full HP

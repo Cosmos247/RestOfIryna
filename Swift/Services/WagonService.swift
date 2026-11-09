@@ -137,19 +137,24 @@ public enum WagonService {
         case unknownLength
         /// Asked away from the capital — a stable button left in chat.
         case notInTown
+        /// The hire is no longer the one the question saw: the second of a
+        /// double tap, or a question left in chat. Nothing is spent.
+        case stale
     }
 
     /// Hire the wagon for the length at `lengthIndex`. A hire that still runs
     /// grows by the length; one that ran out starts again from now, with
     /// whatever is still on the wagon. The silver and the row are one
-    /// transaction, on a user row loaded inside it.
-    public static func hire(lengthIndex: Int, for user: User, on db: any Database,
+    /// transaction, on a user row loaded inside it. `seenStamp` is what the
+    /// question saw (`WagonMath.hireStamp`), so a second tap spends nothing.
+    public static func hire(lengthIndex: Int, seenStamp: Int, for user: User, on db: any Database,
                             now: Date = Date()) async throws -> HireResult {
         guard user.location == TravelDestination.capital.rawValue,
               try await TravelState.current(for: user, on: db) == nil else { return .notInTown }
         guard let length = WagonCatalog.length(at: lengthIndex) else { return .unknownLength }
-        guard user.silver >= length.silver else { return .notEnoughSilver(have: user.silver, need: length.silver) }
         let userId = try user.requireID()
+        guard WagonMath.hireStamp(end: try await wagon(for: userId, on: db)?.endsAt, now: now) == seenStamp else { return .stale }
+        guard user.silver >= length.silver else { return .notEnoughSilver(have: user.silver, need: length.silver) }
         let seconds = WagonCatalog.seconds(of: length)
 
         let outcome = try await db.transaction { tx -> (end: Date, left: Int)? in

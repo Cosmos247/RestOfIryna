@@ -196,5 +196,7 @@ public enum ContentSchema {
     /// crossing's minutes with the wagon and the rental lengths). A v32 binary would never read it and offer no
     /// stable; a v32 bundle on a v33 binary would stop on a bare
     /// `missingFile("stable.json")`. The handshake names the cause either way.
+    /// The Rysak (2026-11-09) joined `stable.json` under the same number: no
+    /// binary that reads v33 had been deployed yet.
     public static let current: Int = 33
 }

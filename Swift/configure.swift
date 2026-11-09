@@ -328,6 +328,9 @@ public func configure(logger: Logger) async throws {
     // 2026-11-08, the estate's door asks: on horseback the wagon stays at home
     // (one column with a default, no rows rewritten).
     migrations.add(AddWagonLeftHome())
+    // 2026-11-09, `spec-horse.md`: the Rysak the stable hires out — one new
+    // table, no rows touched.
+    migrations.add(CreateHorses())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

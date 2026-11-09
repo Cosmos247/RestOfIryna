@@ -161,6 +161,9 @@ enum ContentDigest {
         // through the façade the stable and the fit checks ask.
         digest.combine("wagon \(WagonCatalog.capacity) road \(WagonCatalog.travelMinutes)")
         for length in WagonCatalog.lengths { digest.combine("wagon \(length.minutes)m@\(length.silver)") }
+        // The Rysak (2026-11-09): its crossing and every length's price.
+        digest.combine("horse road \(HorseCatalog.authoredCrossingSeconds)")
+        for length in HorseCatalog.lengths { digest.combine("horse \(length.minutes)m@\(length.silver)") }
         // The holidays (2026-10-29): when each runs, where its manor stands and
         // what fights in it at what price. The lines the creatures fight are
         // derived from the tuning and replayed in that half.

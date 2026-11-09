@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain), `spec-tinctures.md` (the fortune teller's cauldron), `spec-wagon.md` (the stable's wagon) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
+| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain), `spec-tinctures.md` (the fortune teller's cauldron), `spec-wagon.md` (the stable's wagon), `spec-horse.md` (the stable's Rysak) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -148,7 +148,7 @@ a thing it must describe ALL of it: both lines are built from the data (`bonusOu
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never
 goes around it. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening|king|tinctures|wagon|events>`, never typed, so a specification
+<progression|gates|bestiary|items|sets|economy|opening|king|tinctures|wagon|horse|events>`, never typed, so a specification
 cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
 `-c release`.
 
@@ -589,11 +589,17 @@ and `put` (the bag first, `WagonMath`, all or nothing) to write — and only whi
 capital reader of the bag that skips it hides the cargo there. It carries anything the warehouse takes, gear
 with its own `GearState` and a copy at a time; at home it trades with the warehouse alone and no estate service
 reads it (the owner: unload first); it never enters the forest; an ended hire sends its cargo to the warehouse up
-to the cap. **A trip's crossing is stamped on its row** (`travel_state.crossing_seconds`: 3 min with the wagon, 2
-without) — a turn-back reads it, never the global `travelSeconds`. **The estate's door asks, while a hire runs:**
+to the cap. **A trip's crossing is stamped on its row** (`travel_state.crossing_seconds`: 3 min with the wagon, 1 min 30 s on
+the Rysak, otherwise 2) — a turn-back reads it, never the global `travelSeconds`. **The estate's door asks, while a hire runs:**
 «🐎 Верхи» leaves the wagon at home (`Wagon.leftHome`) and nothing in town or on the road reads it; the answer holds
 both ways and the capital asks nothing. `WagonMath.ridesAlong` is the one test of where it is — never read the hire
 alone. Auto-memory `project-wagon-rental`.
+
+**The hired Rysak («🐴 Рисак», `stable.json` → `horse`, `spec-horse.md`) only shortens the road**: 1 min 30 s on every
+trip set out while it runs. `WagonMath.crossing` is the one reading of a crossing — the wagon's pace if it rides along,
+else the Rysak's, else the road's — **and the Rysak never speeds the wagon up** (the owner: a faster wagon will be a
+separate zlatnyk one, not designed). Alone it asks nothing at the door. **A hire's yes carries what its question saw**
+(`WagonMath.hireStamp`), so a double tap on «Найняти» pays once, the wagon's as well. Auto-memory `project-horse-rental`.
 
 **The fortune teller brews** (2026-11-07, `spec-tinctures.md`): «🧪 Настоянки» on her screen, five recipes of plants and a
 trophy in `recipes.json`, category `tincture`, each with a `silverFee`. **A tincture is not a craft**: `isCraftable` is false, so

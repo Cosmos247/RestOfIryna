@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-08)* **the estate's door asks «🐎 Верхи» or «🫏 З возом», and `f5f90b6`'s hash fill** — Swift + uk/en + `AddWagonLeftHome` (one column with a default),
+- *(this commit, 11-09)* **the stable's Rysak «🐴 Рисак», and `ea9db6e`'s hash fill** — Swift + `stable.json` → `horse` (schema stays v33, no v33 binary deployed) + uk/en + `CreateHorses`
+  (one new table), NOT deployed, ships with the wagon: every trip set out while its hire runs takes 1 min 30 s, 50 / 100 / 340 / 1,080 🪙 for the wagon's four lengths, the wagon
+  setting the pace when it rides along (`content/spec/spec-horse.md`); the stable's buttons a column per offer; a double tap on «✅ Найняти» pays once, the wagon's too. 612 tests; the digest moved `records` alone (`44ac628c24ed47be`, content hash `0b82dc59`, COMBINED `40f970baec4a21ce`).
+- `ea9db6e` (11-08) **the estate's door asks «🐎 Верхи» or «🫏 З возом», and `f5f90b6`'s hash fill** — Swift + uk/en + `AddWagonLeftHome` (one column with a default),
   NOT deployed, content and digest unmoved (COMBINED `647107eb5b3754ab`): on horseback the wagon waits at home and its cargo is out of reach in
   town; the answer holds both ways (`spec-wagon.md` §2.11). 599 tests.
 - `f5f90b6` (11-08) **the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill** — Swift + content schema **v33** (`stable.json`) + uk/en
@@ -1037,7 +1040,26 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-08, later (the estate's door asks: on horseback or with the wagon) — *(this commit)*
+## Session — 2026-11-09 (the stable's Rysak «🐴 Рисак») — *(this commit)*
+
+**The ask** («Виходячи з того, які рішення я прийняв при розробці возу, запропонуй мені рішення для швидшого коня»): a proposal that mapped each wagon decision onto the horse, the
+road minutes on the wagon's own measured players, a played sample and five forks. **Decided by quiz, two rounds:** 3 min with the wagon whether or not the horse is hired («Поки 3хв.
+Потім буде окремий, донатний віз, який йде швидше» — recorded in `TODO.md` → Open, not designed); 1 min 30 s (1 min, which I recommended, and 40 s declined); a start of 50 on the
+wagon's curve; «Рисак» from Баский кінь / Румак / Скакун / Рисак; 🐴 over 🏇; shipped with the wagon. The draft spec was signed off with «Так» and built.
+
+**Built:** `stable.json` → `horse` (`travelSeconds` 90 — the wagon's whole minutes cannot say 1 min 30 s — and four lengths); `HorseDTO`; `validateStable` runs one routine over both offers' lengths and
+adds `stable.horse_not_faster_than_road` and `stable.horse_crossing_not_positive`; `WagonMath.crossing` stays the one reading (wagon, else horse, else road); `Horse`, `HorseCatalog`, `HorseService`, `HorseDisplay`, `CreateHorses`;
+the stable's screen and question; the door printing the ride the player would get; `hiredRoadLine` on the three road cards; the profile's line; the watchman's `announceEndedHorses`; `spec horse` and the economy's sinks row.
+`TravelService.crossingSeconds` used to return the plain road when no wagon row existed: that guard is gone. **Beyond the sample:** Поділ's caption named only the wagon, so its last sentence now reads «наймають рисака чи віз під товар».
+
+**Verified:** build, 612 tests (13 new), `validate --strict`, the digest moving `records` alone. **Rehearsed on a scratch Postgres 15** (`reference-deploy-rehearsal`, the 11-08 harness reused, nothing sent to Telegram): `CreateHorses` on a database that already held players; the stable, the
+question, the door and the road line word for word in uk and free of placeholders and Cyrillic in en; 92 checks over a hire refused at the estate / on the road / too poor / at a removed index, a player with no wagon row, a turn-back, a hire ending on the way, the wagon setting the pace both ways, «Верхи» on and off the Rysak, a wagon hired in town, the notice exactly once, a marker that leaves a later hire's end alone, the row going with the player. **Fourteen mutants, each caught** (eleven before the audit, three for the double tap). **Not run:** `onStableCallback`, `handleStableHire` and `askTheRoad`, which need a Telegram update; the walk block in `TODO.md` is the proof.
+
+**The audit before the commit** (the owner's short form, an independent read of the code beside mine) **found, and this commit fixes:** a double tap on «✅ Найняти» charged twice, the Rysak's and the wagon's alike — no callback dedupe exists and the per-user chain runs both taps — so the yes now carries `WagonMath.hireStamp` and a mismatch is `HireResult.stale`, on the shape of the bag's `drop1ok`; one row that would not save dropped the whole batch of Rysak notices; the walk block and the spec promised a refusal line that a stale stable button never reaches at home or on the road (the main router deletes it); English capitalised «Trotter» mid-sentence; stale records (the tree's digest in `status.md`, README's migrations and stable line, the file map, the primer's test-bot line) and three wagon-only comments. **Left as they are, each harmless:** the wagon's `settleEnded` has the same batch shape (rare, only a notice); a door question left in chat quotes the time it was drawn with, and the road card prints the true one; a wagon hire ending on the road leaves «🐴 Рисак ще…» on later cards of a 3-minute trip.
+
+**The test bot ran from 21:22 until the owner stopped it** (`CreateHorses` verified on `roi_test`'s table; the log holds only the two boot-time `chat not found` lines): `jj` hired the Rysak and the wagon for 3 h each (1704 → 1414 🪙, the two prices exactly). **On the test bot the same evening (the owner, with a screenshot):** the stable's buttons in two columns, the Rysak's on the left and the wagon's on the right; «Віз Рисак не пришвидшує: з ним дорога лишається 3хв. У ліс не йде.» and the wagon's «У ліс не йде — чекає на подвір'ї.» cut from the two questions (the copy only, both rules stand).
+
+## Session — 2026-11-08, later (the estate's door asks: on horseback or with the wagon) — `ea9db6e`
 
 **The ask** (the owner, quoting the previous session's finding «Найнятий віз сповільнює кожну поїздку до 3 хвилин навіть порожнім, і
 повернути його достроково не можна»): a screen at the estate's door where a player with a hired wagon chooses how to ride. A played

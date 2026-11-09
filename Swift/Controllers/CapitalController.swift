@@ -46,8 +46,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case fortune
         case master
         case tavern
-        /// The stable on Поділ (2026-11-08, `spec-wagon.md`): the wagon is
-        /// hired here. `CapitalController+Stable.swift`.
+        /// The stable on Поділ (2026-11-08, `spec-wagon.md`): the wagon and the
+        /// Rysak are hired here. `CapitalController+Stable.swift`.
         case stable
 
         var titleKey: String  { "capital.location.\(rawValue).title" }
@@ -505,20 +505,34 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Lingo's `%{var}` parser. See .memory/localization.md.
         let text = "🐎 " + lingo.localize(key, locale: locale, interpolations: [
             "remaining": TravelService.formatCountdown(remaining, lingo: lingo, locale: locale)
-        ]) + (try await Self.wagonRoadLine(context: context))
+        ]) + (try await Self.hiredRoadLine(context: context))
         try await Self.sendRoadCard(context: context, text: text)
     }
 
-    /// «🫏 Позаду торохтить віз: 150/200.» under every road card while the
-    /// wagon rides with the player (2026-11-08, `spec-wagon.md` §4). Empty when
-    /// there is none or it stayed at home, so such a trip reads as it always did.
-    static func wagonRoadLine(context: Context) async throws -> String {
-        guard let status = try await WagonService.status(for: context.session, on: context.db), status.ridesAlong else {
-            return ""
+    /// The line under every road card for what the player hired: «🫏 Позаду
+    /// торохтить віз: 150/200.» while the wagon rides with them (2026-11-08,
+    /// `spec-wagon.md` §4), otherwise «🐴 Рисак ще 2год 58хв.» while its hire runs
+    /// (2026-11-09, `spec-horse.md` §3.4) — behind a wagon it speeds nothing, so
+    /// it is not named. Empty otherwise, so such a trip reads as it always did.
+    static func hiredRoadLine(context: Context) async throws -> String {
+        hiredRoadLine(wagon: try await WagonService.status(for: context.session, on: context.db),
+                      horse: try await HorseService.status(for: context.session, on: context.db),
+                      lingo: context.lingo, locale: context.session.locale)
+    }
+
+    /// The line itself — no database, so a rehearsal reads it exactly as a
+    /// player will.
+    static func hiredRoadLine(wagon: WagonService.Status?, horse: HorseService.Status?, lingo: Lingo, locale: String,
+                              now: Date = Date()) -> String {
+        if let wagon, wagon.ridesAlong {
+            return "\n\(WagonDisplay.icon) " + lingo.localize("travel.wagon_behind", locale: locale,
+                                                               interpolations: ["used": "\(wagon.used)",
+                                                                                "cap": "\(wagon.capacity)"])
         }
-        return "\n\(WagonDisplay.icon) " + context.lingo.localize("travel.wagon_behind", locale: context.session.locale,
-                                                                   interpolations: ["used": "\(status.used)",
-                                                                                    "cap": "\(status.capacity)"])
+        guard let horse else { return "" }
+        return "\n\(HorseDisplay.icon) " + lingo.localize("travel.horse_left", locale: locale, interpolations: [
+            "time": Countdown.format(horse.secondsLeft(now: now), lingo: lingo, locale: locale)
+        ])
     }
 
     /// Where the road's picture lives. Missing on disk, `sendCachedPhoto`
@@ -594,7 +608,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "button": Commands.turnBack.button(for: context.session, lingo).text
             ])
         }
-        text += try await Self.wagonRoadLine(context: context)
+        text += try await Self.hiredRoadLine(context: context)
         try await Self.sendRoadCard(context: context, text: text)
     }
 
@@ -610,7 +624,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = "↩️ " + lingo.localize("travel.turned_back", locale: locale, interpolations: [
             "destination": lingo.localize(destKey, locale: locale),
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
-        ]) + (try await wagonRoadLine(context: context))
+        ]) + (try await hiredRoadLine(context: context))
         try await sendRoadCard(context: context, text: text)
     }
 

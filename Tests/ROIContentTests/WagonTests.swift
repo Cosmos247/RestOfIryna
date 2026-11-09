@@ -33,7 +33,7 @@ final class WagonTests: XCTestCase {
             manifest: s.manifest, items: s.items, enemies: s.enemies, recipes: s.recipes,
             starterRecipeIds: s.starterRecipeIds, weaponLadders: s.weaponLadders,
             bags: s.bags, estateUpgrades: s.estateUpgrades, plots: s.plots,
-            stable: StableFileDTO(wagon: wagon),
+            stable: StableFileDTO(horse: try XCTUnwrap(s.stable?.horse), wagon: wagon),
             tuning: s.tuning, contentHash: "test")
     }
 

@@ -220,8 +220,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let zlatnyks = (try? await ZlatnykService.balance(of: context.session.requireID(), on: context.db)) ?? 0
         // The hired wagon (2026-11-08) — read here, rendered as a line below.
         let wagon = try await WagonService.status(for: context.session, on: context.db)
+        // The hired Rysak (2026-11-09), the same way.
+        let horse = try await HorseService.status(for: context.session, on: context.db)
         let text = renderProfile(session: context.session, equipped: equipped, zlatnyks: zlatnyks, wagon: wagon,
-                                 lingo: context.lingo)
+                                 horse: horse, lingo: context.lingo)
         let keyboard = profileKeyboard(lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
@@ -635,7 +637,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     // MARK: - Profile Rendering
 
     private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], zlatnyks: Int,
-                               wagon: WagonService.Status? = nil, lingo: Lingo) -> String {
+                               wagon: WagonService.Status? = nil, horse: HorseService.Status? = nil,
+                               lingo: Lingo) -> String {
         let nickname = session.nickname ?? ""
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
@@ -773,6 +776,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // ще 2год 41хв», or «· оренда скінчилась» while a remainder waits on it.
         if let wagon {
             text += "\n" + WagonDisplay.statusLine(wagon, lingo: l, locale: loc)
+        }
+        // «🐴 Рисак: ще 2год 58хв» while its hire runs (`spec-horse.md` §3.4).
+        if let horse {
+            text += "\n" + HorseDisplay.statusLine(horse, lingo: l, locale: loc)
         }
         return text
     }

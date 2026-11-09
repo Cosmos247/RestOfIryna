@@ -2853,8 +2853,9 @@ public enum ContentValidator {
         return issues
     }
 
-    /// `stable.json` — the wagon (2026-11-08, `spec-wagon.md`). Each rule has a
-    /// failing case in `WagonTests`.
+    /// `stable.json` — the wagon (2026-11-08, `spec-wagon.md`) and the Rysak
+    /// (2026-11-09, `spec-horse.md`). Each rule has a failing case in `WagonTests`
+    /// or `HorseTests`.
     ///
     /// The wagon is what the owner asked for in one sentence — «в обоз можна
     /// буде завантажити більше матеріалів ніж в сумку» — so a capacity that is
@@ -2864,7 +2865,7 @@ public enum ContentValidator {
     /// minute than the one before it, compared by cross-multiplying so no
     /// rounding can let an equal price through.
     private static func validateStable(_ bundle: ContentBundle) -> [ContentIssue] {
-        guard let wagon = bundle.stable?.wagon else { return [] }
+        guard let wagon = bundle.stable?.wagon, let horse = bundle.stable?.horse else { return [] }
         let file = "stable.json"
         var issues: [ContentIssue] = []
         func fail(_ path: String, _ rule: String, _ message: String) {
@@ -2882,34 +2883,50 @@ public enum ContentValidator {
             fail("wagon.travelMinutes", "stable.wagon_faster_than_road",
                  "a crossing with the wagon takes \(wagon.travelMinutes) min and without it \(road) — a loaded wagon is never the faster way")
         }
-        if wagon.lengths.isEmpty {
-            fail("wagon.lengths", "stable.wagon_no_lengths", "the stable has no length to hire the wagon for")
+        // The Rysak (2026-11-09, `spec-horse.md`): a horse hired to be faster
+        // has to be, and a crossing of nothing is no road at all.
+        if horse.travelSeconds < 1 {
+            fail("horse.travelSeconds", "stable.horse_crossing_not_positive",
+                 "a crossing on the Rysak takes \(horse.travelSeconds) s — it must be at least 1")
+        } else if let road = bundle.tuning?.time.gameTime.travelMinutes, horse.travelSeconds >= road * 60 {
+            fail("horse.travelSeconds", "stable.horse_not_faster_than_road",
+                 "a crossing on the Rysak takes \(horse.travelSeconds) s and without it \(road * 60) s — a hired horse must be the faster way")
         }
-        for (index, length) in wagon.lengths.enumerated() {
-            let path = "wagon.lengths[\(index)]"
-            if length.minutes < 1 || length.silver < 1 {
-                fail(path, "stable.wagon_length_not_positive",
-                     "\(length.minutes) min for \(length.silver) silver — both must be at least 1")
-                continue
+
+        // One set of rules for every offer's lengths, the owner's rule for the
+        // wagon applied to the Rysak by the same lines.
+        func checkLengths(_ lengths: [WagonLengthDTO], offer: String) {
+            if lengths.isEmpty {
+                fail("\(offer).lengths", "stable.\(offer)_no_lengths", "the stable has no length to hire the \(offer) for")
             }
-            guard index > 0 else { continue }
-            let shorter = wagon.lengths[index - 1]
-            guard shorter.minutes >= 1, shorter.silver >= 1 else { continue }
-            if length.minutes <= shorter.minutes {
-                fail(path, "stable.wagon_length_not_longer",
-                     "\(length.minutes) min after \(shorter.minutes) — the lengths go shortest first")
-            } else {
-                if length.silver <= shorter.silver {
-                    fail(path, "stable.wagon_longer_not_pricier",
-                         "\(length.minutes) min for \(length.silver) after \(shorter.minutes) min for \(shorter.silver) — nobody would hire the shorter one")
+            for (index, length) in lengths.enumerated() {
+                let path = "\(offer).lengths[\(index)]"
+                if length.minutes < 1 || length.silver < 1 {
+                    fail(path, "stable.\(offer)_length_not_positive",
+                         "\(length.minutes) min for \(length.silver) silver — both must be at least 1")
+                    continue
                 }
-                // silver/minutes strictly falling: s_i / m_i < s_(i-1) / m_(i-1).
-                if length.silver * shorter.minutes >= shorter.silver * length.minutes {
-                    fail(path, "stable.wagon_longer_not_cheaper_per_minute",
-                         "\(length.minutes) min for \(length.silver) is not cheaper per minute than \(shorter.minutes) min for \(shorter.silver)")
+                guard index > 0 else { continue }
+                let shorter = lengths[index - 1]
+                guard shorter.minutes >= 1, shorter.silver >= 1 else { continue }
+                if length.minutes <= shorter.minutes {
+                    fail(path, "stable.\(offer)_length_not_longer",
+                         "\(length.minutes) min after \(shorter.minutes) — the lengths go shortest first")
+                } else {
+                    if length.silver <= shorter.silver {
+                        fail(path, "stable.\(offer)_longer_not_pricier",
+                             "\(length.minutes) min for \(length.silver) after \(shorter.minutes) min for \(shorter.silver) — nobody would hire the shorter one")
+                    }
+                    // silver/minutes strictly falling: s_i / m_i < s_(i-1) / m_(i-1).
+                    if length.silver * shorter.minutes >= shorter.silver * length.minutes {
+                        fail(path, "stable.\(offer)_longer_not_cheaper_per_minute",
+                             "\(length.minutes) min for \(length.silver) is not cheaper per minute than \(shorter.minutes) min for \(shorter.silver)")
+                    }
                 }
             }
         }
+        checkLengths(wagon.lengths, offer: "wagon")
+        checkLengths(horse.lengths, offer: "horse")
         return issues
     }
 

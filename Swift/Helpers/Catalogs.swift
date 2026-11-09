@@ -85,6 +85,11 @@ final class DomainContent: Sendable {
     let wagonCapacity: Int
     let wagonTravelMinutes: Int
     let wagonLengths: [WagonLengthDTO]
+    /// The Rysak the stable hires out (`stable.json`): its crossing in game
+    /// seconds and its lengths, shortest first. A hand-built fixture without
+    /// the file offers no length, so no horse can be hired.
+    let horseTravelSeconds: Int
+    let horseLengths: [WagonLengthDTO]
     /// The holidays, their creatures solved at every level (`events.json`).
     let events: [GameEvent]
 
@@ -280,6 +285,8 @@ final class DomainContent: Sendable {
         self.wagonCapacity = content.wagon?.capacity ?? 0
         self.wagonTravelMinutes = content.wagon?.travelMinutes ?? content.tuning?.time.gameTime.travelMinutes ?? 0
         self.wagonLengths = content.wagon?.lengths ?? []
+        self.horseTravelSeconds = content.horse?.travelSeconds ?? (content.tuning?.time.gameTime.travelMinutes ?? 0) * 60
+        self.horseLengths = content.horse?.lengths ?? []
         self.events = try content.events.map {
             try GameEvent(dto: $0, archetypes: content.enemyArchetypes, tuning: tuning, budget: budget,
                           rarities: content.rarities)

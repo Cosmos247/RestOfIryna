@@ -1,4 +1,25 @@
 {
+  "horse" : {
+    "lengths" : [
+      {
+        "minutes" : 60,
+        "silver" : 50
+      },
+      {
+        "minutes" : 180,
+        "silver" : 100
+      },
+      {
+        "minutes" : 1440,
+        "silver" : 340
+      },
+      {
+        "minutes" : 10080,
+        "silver" : 1080
+      }
+    ],
+    "travelSeconds" : 90
+  },
   "wagon" : {
     "capacity" : 200,
     "lengths" : [

@@ -33,6 +33,9 @@ bag, the warehouse, the profile and the road card show «🫏 Віз: N/200»; `
 **The estate's door asks** (the same day, NOT LIVE, `AddWagonLeftHome`, §2.11): while a hire runs, «🐎 Верхи · 2хв» leaves the wagon at home and
 its cargo out of reach in town, «🫏 З возом · 3хв» brings it; the answer holds both ways. The bag's header prints the full line, «· чекає вдома» while
 the wagon is left behind. 599 tests.
+**2026-11-09 — the stable's Rysak «🐴 Рисак»** (Swift + `stable.json` → `horse` under schema v33 + uk/en + `CreateHorses`, NOT LIVE, ships with the wagon;
+`spec-horse.md`). Every trip set out while its hire runs takes 1 min 30 s, for 1 год / 3 год / 1 день / 7 днів at 50 / 100 / 340 / 1,080 🪙; a wagon alongside
+keeps its 3 min; alone it asks nothing at the door. Its end is one notice from the watchman. A double tap on «✅ Найняти» pays once, the wagon's too (`WagonMath.hireStamp`). The digest moved `records` alone. 612 tests.
 
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
@@ -1196,7 +1199,7 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline (its one home is `Prompt.md`; this is the trail) — the tree since 2026-11-08 (the wagon, schema **v33**, not
-deployed): `records 99f071177056cdc3`, content hash `e96dab98`, COMBINED `647107eb5b3754ab`, the other four lines unchanged. The
+deployed): `records 44ac628c24ed47be`, content hash `0b82dc59`, COMBINED `40f970baec4a21ce`, the other four lines unchanged (the wagon's and the Rysak's, 2026-11-09). The
 Pi since the 2026-11-07 21:16 restart (`11d16bb`, schema v32): `records 0b18fadaface5fa8`, content hash `b6cb33a2`, COMBINED
 `c725c286799bc344`. Before it, the Pi since the 2026-11-05 13:28 restart (`46437bf`, schema v30): `records 4f4dcf860af8605f`,
 content hash `95421568`, COMBINED `d0b897ae80619502`. Before it, the Pi since the 2026-11-01 09:56 restart (`b0c0d9c`):
@@ -1218,7 +1221,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **599 tests** (2026-11-08, the wagon and its door; 585 at the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **612 tests** (2026-11-09, the Rysak; 599 at the wagon and its door). Pace is **136–151 days** to level 40 in the tree since the hazel
 (2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

@@ -374,19 +374,38 @@ public enum SpecTables {
     public static func wagon(content: GameContent) -> String {
         guard let wagon = content.wagon else { return "" }
         let largestBag = content.bags.capacities.max() ?? 0
-        var out = ["| length | minutes | silver | per hour | per minute |", "|---|---|---|---|---|"]
-        for length in wagon.lengths {
-            let hours = Double(length.minutes) / 60
-            out.append(String(format: "| %@ | %d | %d | %.1f | %.3f |", lengthLabel(length.minutes),
-                              length.minutes, length.silver,
-                              Double(length.silver) / hours, Double(length.silver) / Double(length.minutes)))
-        }
+        var out = hireTable(wagon.lengths)
         out.append("")
         out.append("Capacity **\(wagon.capacity)** places for anything the warehouse takes; the largest bag holds \(largestBag).")
         if let road = content.tuning?.time.gameTime.travelMinutes {
             out.append("A crossing with the wagon: **\(wagon.travelMinutes) min** (\(road) min without it).")
         }
         return out.joined(separator: "\n")
+    }
+
+    /// The Rysak the stable hires out (`stable.json`, `spec-horse.md` §2): the
+    /// same table as the wagon's, and its crossing beside the road's.
+    public static func horse(content: GameContent) -> String {
+        guard let horse = content.horse else { return "" }
+        var out = hireTable(horse.lengths)
+        out.append("")
+        var crossing = "A crossing on the Rysak: **\(horse.travelSeconds) s**"
+        if let road = content.tuning?.time.gameTime.travelMinutes { crossing += " (\(road * 60) s without it)" }
+        if let wagon = content.wagon { crossing += "; with the wagon it stays \(wagon.travelMinutes * 60) s" }
+        out.append(crossing + ".")
+        return out.joined(separator: "\n")
+    }
+
+    /// Each rental length with its price per hour and per minute.
+    private static func hireTable(_ lengths: [WagonLengthDTO]) -> [String] {
+        var out = ["| length | minutes | silver | per hour | per minute |", "|---|---|---|---|---|"]
+        for length in lengths {
+            let hours = Double(length.minutes) / 60
+            out.append(String(format: "| %@ | %d | %d | %.1f | %.3f |", lengthLabel(length.minutes),
+                              length.minutes, length.silver,
+                              Double(length.silver) / hours, Double(length.silver) / Double(length.minutes)))
+        }
+        return out
     }
 
     /// `1 h`, `3 h`, `1 d`, `7 d`, `90 min` — the table's own words, not the
@@ -916,6 +935,9 @@ public enum SpecTables {
         }
         if let w = content.wagon, let low = w.lengths.map(\.silver).min(), let high = w.lengths.map(\.silver).max() {
             out.append("| the stable's wagon | \(low)–\(high) | per hire, \(w.lengths.count) lengths (`spec wagon`) |")
+        }
+        if let h = content.horse, let low = h.lengths.map(\.silver).min(), let high = h.lengths.map(\.silver).max() {
+            out.append("| the stable's Rysak | \(low)–\(high) | per hire, \(h.lengths.count) lengths (`spec horse`) |")
         }
 
         if let q = content.quests, let tuning = content.tuning {

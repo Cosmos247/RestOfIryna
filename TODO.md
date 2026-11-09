@@ -2161,6 +2161,13 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-09 — the stable's Rysak «🐴 Рисак» (NOT LIVE; Swift + `stable.json` → `horse` under schema v33 + uk/en + `CreateHorses`; `content/spec/spec-horse.md`). `swift test` reaches the arithmetic and the validator; the hire, the crossings and the screens' text were rehearsed on a scratch Postgres, never in Telegram, so this block is the proof:**
+- [ ] «🐎 Стайня» on Поділ: the carter's new line, «🐴 Рисак — дорога 1хв 30сек замість 2хв…» above the wagon's, the buttons in two columns: 🐴 on the left, 🫏 on the right. Поділ's caption ends «наймають рисака чи віз під товар».
+- [ ] «🐴 3 год · 100 🪙»: the question ending in «✅ 🪙 Срібло (N/100)»; «❌ Ні» goes back and takes nothing; «✅ Найняти»: the banner «🐴 Рисака найнято на 3 год · −100 🪙», the stable redrawn with «🐴 Рисак ваш ще …» and «🐴 +1 год · 50 🪙». Short of silver: the modal, nothing taken. Two fast taps on «✅ Найняти»: one payment, one banner, the end moved once, for the wagon too. A stable button from chat history at home or on the road: the message is deleted (the main router's default, the wagon's too).
+- [ ] The road home: «Прибуття за 1хв 30сек», «🐴 Рисак ще …» under it, also on «how long is left» and after a turn-back; a turn-back returns as long as was ridden. From the estate with no wagon: «Столиця» asks nothing, 1хв 30сек.
+- [ ] With a wagon too: the door reads «Верхи — 1хв 30сек» and [🐎 Верхи · 1хв 30сек] [🫏 З возом · 3хв]; «З возом» really takes 3 min and the card names only the wagon; «Верхи» takes 1хв 30сек both ways.
+- [ ] The profile: «🐴 Рисак: ще …», gone after the end. The end of a hire: one «🐴 Оренда рисака скінчилась.» (offer to move `horses.ends_at` on `roi_test`), the next trip 2 min, the 🏕 and the walk untouched.
+
 **Added 2026-11-08, later — the estate's door asks «🐎 Верхи» or «🫏 З возом» (NOT LIVE; Swift + uk/en + `AddWagonLeftHome`; `spec-wagon.md` §2.11). `swift test` reaches only `WagonMath`, so this block is the proof:**
 - [ ] Hire running, «Столиця» at the estate: «🐎 Дорога до столиці», «🫏 Віз: N/200 · ще …», the two lines and [🐎 Верхи · 2хв] [🫏 З возом · 3хв], an empty wagon too. Without a hire, or at a hire that ran out: straight on the road, as before.
 - [ ] «🐎 Верхи»: the buttons go, «Прибуття за 2хв», no «Позаду торохтить». In town the trader, the Master, the fortune teller, a delivery job and a trade see the bag alone; the bag and the profile read «… · чекає вдома». Home in 2хв.
@@ -3499,9 +3506,9 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the 2026-11-08 session (the wagon):**
-- **The horse is parked** («Поки зупинимось тільки на обозі»): a faster horse hired at the same stable, first proposed as 1 min
-  instead of 2 for 3 hours. A trip already stamps its own crossing (`travel_state.crossing_seconds`, built for the wagon's 3 min), so a
-  horse is a second source for that stamp — and a rule for a horse and a wagon together, which nobody has decided.
+- **A separate zlatnyk wagon that rides faster** (the owner, 2026-11-09: «Потім буде окремий, донатний віз, який йде швидше»): not designed, build
+  nothing until asked. Under 2 minutes it needs its own rule, because `stable.wagon_faster_than_road` refuses any wagon faster than the road.
+- **Trips are recorded nowhere**, so what a day's or a week's hire of the Rysak saves is unmeasured (`spec-horse.md` §5).
 - **Gear on the wagon is read by no place in town** (the build's own limit, spec §3.4): the Master's repair and enchant and a trade's
   gear name the bag's rows. Offer, if a player asks, the Master reading wagon copies too.
 - **The capital's other puts stay bag-only**: the Master's armour shop, the tavern's dishes, the fortune teller's brew and the King's

@@ -28,10 +28,25 @@ public enum WagonMath {
         running && !leftHome
     }
 
-    /// A crossing: the wagon's slower road when it rides along, never shorter
-    /// than the road's own (§2.9). Without it the road is the road.
-    public static func crossing(road: TimeInterval, wagon: TimeInterval, ridesAlong: Bool) -> TimeInterval {
-        ridesAlong ? Swift.max(road, wagon) : road
+    /// A crossing, the one reading of it. The wagon sets the pace when it rides
+    /// along, never shorter than the road's own (§2.9), hired horse or not (the
+    /// owner, 2026-11-09). Otherwise `horse` — the Rysak's crossing while its hire
+    /// runs, nil without one (`spec-horse.md` §3.2), never longer than the road.
+    /// Otherwise the road is the road.
+    public static func crossing(road: TimeInterval, wagon: TimeInterval, ridesAlong: Bool,
+                                horse: TimeInterval? = nil) -> TimeInterval {
+        if ridesAlong { return Swift.max(road, wagon) }
+        if let horse { return Swift.min(road, horse) }
+        return road
+    }
+
+    /// What a stable question saw of the hire it asks about: when the running
+    /// hire ends, in whole seconds, or 0 when none runs. The yes carries it and a
+    /// hire that no longer matches spends nothing, so a double tap on «Найняти»
+    /// pays once (2026-11-09, the shape of the bag's `drop1ok:<id>:<held>`).
+    public static func hireStamp(end: Date?, now: Date) -> Int {
+        guard let end, end > now else { return 0 }
+        return Int(end.timeIntervalSince1970)
     }
 
     /// Where a hire of `seconds` ends: a running hire grows by it, one that has

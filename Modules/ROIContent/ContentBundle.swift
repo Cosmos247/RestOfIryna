@@ -58,7 +58,7 @@ public struct ContentBundle: Sendable {
     /// `treasury.json` (schema v22) — what zlatnyks buy. Optional only so
     /// hand-built test fixtures need not carry one.
     public let treasury: TreasuryFileDTO?
-    /// `stable.json` (schema v33) — the wagon the stable on Поділ hires out.
+    /// `stable.json` (schema v33) — the wagon and the Rysak the stable on Поділ hires out.
     /// Optional only so hand-built test fixtures need not carry one.
     public let stable: StableFileDTO?
     /// `events.json` (schema v29) — the holidays: when each runs and what its

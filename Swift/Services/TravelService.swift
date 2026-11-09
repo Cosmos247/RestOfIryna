@@ -32,14 +32,19 @@ public enum TravelService {
         return Double(travelMinutes) * 60.0 / Catalogs.current.timeScale
     }
 
-    /// The crossing a trip set out now would take: the road's own, or the
-    /// slower one while a hired wagon rides along (2026-11-08, the owner:
-    /// three minutes, not two — `stable.json` → `travelMinutes`). A wagon left
-    /// at home slows nothing.
+    /// The crossing a trip set out now would take: the road's own, the slower
+    /// one while a hired wagon rides along (2026-11-08, the owner: three
+    /// minutes, not two — `stable.json` → `travelMinutes`), or the Rysak's while
+    /// its hire runs and no wagon rides along (2026-11-09, `spec-horse.md`). A
+    /// wagon left at home slows nothing, and a player with a Rysak may have no
+    /// wagon row at all.
     public static func crossingSeconds(for user: User, on db: any Database, now: Date = Date()) async throws -> TimeInterval {
-        guard let userId = user.id, let wagon = try await WagonService.wagon(for: userId, on: db) else { return travelSeconds }
-        return WagonMath.crossing(road: travelSeconds, wagon: WagonCatalog.travelSeconds,
-                                  ridesAlong: WagonMath.ridesAlong(running: wagon.isRunning(at: now), leftHome: wagon.leftHome))
+        guard let userId = user.id else { return travelSeconds }
+        let wagon = try await WagonService.wagon(for: userId, on: db)
+        let ridesAlong = wagon.map { WagonMath.ridesAlong(running: $0.isRunning(at: now), leftHome: $0.leftHome) } ?? false
+        let horseRuns = try await HorseService.status(for: user, on: db, now: now) != nil
+        return WagonMath.crossing(road: travelSeconds, wagon: WagonCatalog.travelSeconds, ridesAlong: ridesAlong,
+                                  horse: horseRuns ? HorseCatalog.travelSeconds : nil)
     }
 
     // MARK: - Start
@@ -147,8 +152,8 @@ public enum TravelService {
         // can be further than one crossing from either side.
         //
         // The crossing is the trip's own (2026-11-08): 3 min with a hired wagon,
-        // stamped when it set out and carried by every leg after, so a turn-back
-        // on the wagon's road is not priced against the road without it.
+        // 1 min 30 s on the Rysak, stamped when it set out and carried by every
+        // leg after, so a turn-back is not priced against any other road.
         let crossing = trip.crossingSeconds ?? travelSeconds
         let remaining = min(crossing, max(0, trip.endsAt.timeIntervalSince(now)))
         let walked = crossing - remaining

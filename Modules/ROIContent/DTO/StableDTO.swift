@@ -5,24 +5,41 @@
 //  Created by Dmytro Ihnatyuhin on 08.11.2026.
 //
 //  `stable.json` (schema v33, 2026-11-08, `content/spec/spec-wagon.md`) — what
-//  the stable on Поділ hires out. Its one offer is the wagon («🫏 Віз»): a
-//  second store for anything the warehouse takes, that rides with the player
-//  between the estate and the capital — and slows the road while it does
-//  (the owner, the same day: three minutes, not two). The horse the owner first
-//  asked for is parked (spec §7).
+//  the stable on Поділ hires out:
+//  - the wagon («🫏 Віз»): a second store for anything the warehouse takes, that
+//    rides with the player between the estate and the capital — and slows the
+//    road while it does (the owner, the same day: three minutes, not two);
+//  - the Rysak («🐴 Рисак», 2026-11-09, `content/spec/spec-horse.md`): a faster
+//    horse for the same road, which never speeds the wagon up.
 //
-//  The lengths and their prices are the owner's (2026-11-08): the longest is
-//  the cheapest per minute, a rule the validator holds, so a `/reload` that
+//  The lengths and their prices are the owner's: the longest is the cheapest
+//  per minute, a rule the validator holds for both offers, so a `/reload` that
 //  breaks it is refused rather than installed.
 //
 
 import Foundation
 
 public struct StableFileDTO: Codable, Sendable, Equatable {
+    public let horse: HorseDTO
     public let wagon: WagonDTO
 
-    public init(wagon: WagonDTO) {
+    public init(horse: HorseDTO, wagon: WagonDTO) {
+        self.horse = horse
         self.wagon = wagon
+    }
+}
+
+public struct HorseDTO: Codable, Sendable, Equatable {
+    /// A crossing between the estate and the capital on the Rysak, in game
+    /// seconds — the wagon's whole minutes cannot say 1 min 30 s. Always
+    /// shorter than the road's own crossing.
+    public let travelSeconds: Int
+    /// The rental lengths, shortest first.
+    public let lengths: [WagonLengthDTO]
+
+    public init(travelSeconds: Int, lengths: [WagonLengthDTO]) {
+        self.travelSeconds = travelSeconds
+        self.lengths = lengths
     }
 }
 
@@ -42,6 +59,7 @@ public struct WagonDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// One rental length at the stable, the wagon's and the Rysak's alike.
 public struct WagonLengthDTO: Codable, Sendable, Equatable {
     /// Game minutes, authored at time scale 1 and divided by it where used.
     public let minutes: Int

@@ -5,20 +5,24 @@
 //  Created by Dmytro Ihnatyuhin on 08.11.2026.
 //
 //  The stable on Поділ (2026-11-08, `content/spec/spec-wagon.md`): where the
-//  wagon («🫏 Віз») is hired. A place of its own on the street's third row,
-//  like the trader's — `Assets/capital/stable.jpg` when it exists, text until
-//  then — and every screen after it is a caption edit of that one bubble.
+//  wagon («🫏 Віз») and, since 2026-11-09, the Rysak («🐴 Рисак»,
+//  `content/spec/spec-horse.md`) are hired. A place of its own on the street's
+//  third row, like the trader's — `Assets/capital/stable.jpg` when it exists,
+//  text until then — and every screen after it is a caption edit of that one
+//  bubble.
 //
-//  The screens, each from the approved spec (§4):
-//  - the stable: the carter's line, the offer, the wagon while it is yours,
+//  The screens, each from the approved specs (§4):
+//  - the stable: the carter's line, each offer, what is yours while it runs,
 //    one button per length, printed from `stable.json`;
 //  - the question: the length and its price, the terms, the price as a
 //    `RequirementLine`; only «✅ Найняти» spends;
-//  - the hire: a banner, and the stable redrawn with the wagon now yours.
+//  - the hire: a banner, and the stable redrawn with the hire now yours.
 //
-//  The answer names what it was asked about: `stable:ok:<index>:<price>`. A
-//  `/reload` that moved the length or its price between the question and the
-//  tap redraws the stable and takes nothing.
+//  The answer names what it was asked about: `stable:ok:<index>:<price>:<seen>`
+//  for the wagon, `stable:horse_ok:<index>:<price>:<seen>` for the Rysak, `seen`
+//  being what the question saw of the hire (`WagonMath.hireStamp`). A `/reload`
+//  that moved the length or its price, and the second of a double tap, redraw
+//  the stable and take nothing.
 //
 //  The question at the estate's door lives here too (§2.11): while a hire runs,
 //  «🐎 Верхи» or «🫏 З возом» decides whether the wagon comes along.
@@ -28,6 +32,47 @@ import Fluent
 import Foundation
 @preconcurrency import Lingo
 import SwiftTelegramBot
+
+/// What the stable hires out. The answer to its question names which, so one
+/// handler serves both.
+private enum StableOffer {
+    case wagon, horse
+
+    var icon: String {
+        switch self {
+        case .wagon: return WagonDisplay.icon
+        case .horse: return HorseDisplay.icon
+        }
+    }
+
+    var doneKey: String {
+        switch self {
+        case .wagon: return "stable.hire.done"
+        case .horse: return "stable.horse.done"
+        }
+    }
+
+    var notInTownKey: String {
+        switch self {
+        case .wagon: return "stable.hire.not_in_town"
+        case .horse: return "stable.horse.not_in_town"
+        }
+    }
+
+    func length(at index: Int) -> WagonLengthDTO? {
+        switch self {
+        case .wagon: return WagonCatalog.length(at: index)
+        case .horse: return HorseCatalog.length(at: index)
+        }
+    }
+
+    func hire(lengthIndex: Int, seenStamp: Int, for user: User, on db: any Database) async throws -> WagonService.HireResult {
+        switch self {
+        case .wagon: return try await WagonService.hire(lengthIndex: lengthIndex, seenStamp: seenStamp, for: user, on: db)
+        case .horse: return try await HorseService.hire(lengthIndex: lengthIndex, seenStamp: seenStamp, for: user, on: db)
+        }
+    }
+}
 
 extension CapitalController {
 
@@ -43,7 +88,8 @@ extension CapitalController {
     /// `onRoadCallback` asks the state again.
     func askTheRoad(wagon: WagonService.Status, context: Context) async throws {
         await dismissPendingPicker(context: context)
-        let screen = roadQuestion(wagon: wagon, lingo: context.lingo, locale: context.session.locale)
+        let horseRuns = try await HorseService.status(for: context.session, on: context.db) != nil
+        let screen = roadQuestion(wagon: wagon, horseRuns: horseRuns, lingo: context.lingo, locale: context.session.locale)
         let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(context.session.telegramId),
             text: screen.text,
@@ -54,11 +100,14 @@ extension CapitalController {
     }
 
     /// The question's text and buttons — no database, so a rehearsal reads the
-    /// screen exactly as a player will. Both times are printed from the data.
-    func roadQuestion(wagon: WagonService.Status, lingo: Lingo, locale: String,
+    /// screen exactly as a player will. Both times are printed from the data,
+    /// «Верхи» the ride this player would get: the Rysak's while its hire runs.
+    func roadQuestion(wagon: WagonService.Status, horseRuns: Bool, lingo: Lingo, locale: String,
                       now: Date = Date()) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
         let road = TravelService.travelSeconds
-        let horse = Countdown.format(Int(road), lingo: lingo, locale: locale)
+        let horse = Countdown.format(Int(WagonMath.crossing(road: road, wagon: WagonCatalog.travelSeconds, ridesAlong: false,
+                                                            horse: horseRuns ? HorseCatalog.travelSeconds : nil)),
+                                     lingo: lingo, locale: locale)
         let cart = Countdown.format(Int(WagonMath.crossing(road: road, wagon: WagonCatalog.travelSeconds, ridesAlong: true)),
                                     lingo: lingo, locale: locale)
         let text = [
@@ -108,42 +157,69 @@ extension CapitalController {
 
     private func stableScreen(context: Context) async throws -> (text: String, rows: [[TGInlineKeyboardButton]]) {
         let status = try await WagonService.status(for: context.session, on: context.db)
-        return stableScreen(running: status?.running == true ? status : nil,
+        let horse = try await HorseService.status(for: context.session, on: context.db)
+        return stableScreen(running: status?.running == true ? status : nil, horse: horse,
                             lingo: context.lingo, locale: context.session.locale)
     }
 
     /// The stable's text and buttons — no database, so a rehearsal reads the
     /// screen exactly as a player will. `running` is the wagon while its hire
-    /// runs; a length bought then adds to it, and its buttons say so.
-    func stableScreen(running: WagonService.Status?, lingo: Lingo, locale: String,
+    /// runs and `horse` the Rysak while its does; a length bought then adds to
+    /// it, and its buttons say so.
+    func stableScreen(running: WagonService.Status?, horse: HorseService.Status?, lingo: Lingo, locale: String,
                       now: Date = Date()) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
+        let base = Countdown.format(Int(TravelService.travelSeconds), lingo: lingo, locale: locale)
         var lines = [
             "<b>\(lingo.localize(Location.stable.titleKey, locale: locale))</b>",
             "",
             lingo.localize(Location.stable.bodyKey, locale: locale),
             "",
-            WagonDisplay.icon + " " + lingo.localize("stable.wagon.offer", locale: locale, interpolations: [
-                "cap": "\(WagonCatalog.capacity)",
-                "road": Countdown.format(Int(WagonCatalog.travelSeconds), lingo: lingo, locale: locale),
-                "base": Countdown.format(Int(TravelService.travelSeconds), lingo: lingo, locale: locale)
+            HorseDisplay.icon + " " + lingo.localize("stable.horse.offer", locale: locale, interpolations: [
+                "road": Countdown.format(Int(HorseCatalog.travelSeconds), lingo: lingo, locale: locale),
+                "base": base
             ])
         ]
+        if let horse {
+            lines.append(HorseDisplay.icon + " " + lingo.localize("stable.horse.yours", locale: locale, interpolations: [
+                "time": Countdown.format(horse.secondsLeft(now: now), lingo: lingo, locale: locale)
+            ]))
+        }
+        lines.append(WagonDisplay.icon + " " + lingo.localize("stable.wagon.offer", locale: locale, interpolations: [
+            "cap": "\(WagonCatalog.capacity)",
+            "road": Countdown.format(Int(WagonCatalog.travelSeconds), lingo: lingo, locale: locale),
+            "base": base
+        ]))
         if let running {
             lines.append(WagonDisplay.icon + " " + lingo.localize("stable.wagon.yours", locale: locale, interpolations: [
                 "time": Countdown.format(running.secondsLeft(now: now), lingo: lingo, locale: locale),
                 "used": "\(running.used)", "cap": "\(running.capacity)"
             ]))
         }
-        var buttons: [TGInlineKeyboardButton] = []
-        for (index, length) in WagonCatalog.lengths.enumerated() {
-            let label = WagonDisplay.lengthLabel(minutes: length.minutes, lingo: lingo, locale: locale)
-            let text = "\(WagonDisplay.icon) \(running == nil ? "" : "+")\(label) · \(length.silver) 🪙"
-            buttons.append(TGInlineKeyboardButton(text: text, callbackData: "stable:hire:\(index)"))
+        // A column per offer (the owner, 2026-11-09): the Rysak's on the left,
+        // the wagon's on the right, each row one length.
+        let columns = [
+            hireColumn(HorseCatalog.lengths, icon: HorseDisplay.icon, verb: "horse", extending: horse != nil,
+                       lingo: lingo, locale: locale),
+            hireColumn(WagonCatalog.lengths, icon: WagonDisplay.icon, verb: "hire", extending: running != nil,
+                       lingo: lingo, locale: locale)
+        ]
+        var rows: [[TGInlineKeyboardButton]] = (0..<(columns.map(\.count).max() ?? 0)).map { row in
+            columns.compactMap { $0.indices.contains(row) ? $0[row] : nil }
         }
-        var rows = stride(from: 0, to: buttons.count, by: 2).map { Array(buttons[$0..<min($0 + 2, buttons.count)]) }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.button.back_to_capital", locale: locale),
                                             callbackData: "capital:back")])
         return (lines.joined(separator: "\n"), rows)
+    }
+
+    /// One offer's lengths, shortest first: «🐴 1 год · 50 🪙», with a «+» while
+    /// its hire runs.
+    private func hireColumn(_ lengths: [WagonLengthDTO], icon: String, verb: String, extending: Bool,
+                            lingo: Lingo, locale: String) -> [TGInlineKeyboardButton] {
+        lengths.enumerated().map { index, length in
+            let label = WagonDisplay.lengthLabel(minutes: length.minutes, lingo: lingo, locale: locale)
+            let text = "\(icon) \(extending ? "+" : "")\(label) · \(length.silver) 🪙"
+            return TGInlineKeyboardButton(text: text, callbackData: "stable:\(verb):\(index)")
+        }
     }
 
     // MARK: - Dispatch
@@ -156,14 +232,17 @@ extension CapitalController {
         let ctrl = Controllers.capitalController
         let parts = data.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
         let verb = parts.count > 1 ? parts[1] : ""
-        if verb == "ok", parts.count == 4, let index = Int(parts[2]), let price = Int(parts[3]) {
-            try await ctrl.handleStableHire(index: index, price: price, query: query, messageId: messageId,
-                                            isPhoto: isPhoto, context: context)
+        if verb == "ok" || verb == "horse_ok", parts.count == 5, let index = Int(parts[2]), let price = Int(parts[3]),
+           let seen = Int(parts[4]) {
+            try await ctrl.handleStableHire(offer: verb == "ok" ? .wagon : .horse, index: index, price: price, seenStamp: seen,
+                                            query: query, messageId: messageId, isPhoto: isPhoto, context: context)
             return
         }
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         if verb == "hire", parts.count == 3, let index = Int(parts[2]), WagonCatalog.length(at: index) != nil {
             try await ctrl.editToStableQuestion(index: index, messageId: messageId, isPhoto: isPhoto, context: context)
+        } else if verb == "horse", parts.count == 3, let index = Int(parts[2]), HorseCatalog.length(at: index) != nil {
+            try await ctrl.editToHorseQuestion(index: index, messageId: messageId, isPhoto: isPhoto, context: context)
         } else {
             try await ctrl.editToStable(messageId: messageId, isPhoto: isPhoto, context: context)
         }
@@ -183,7 +262,7 @@ extension CapitalController {
             return
         }
         let status = try await WagonService.status(for: context.session, on: context.db)
-        let screen = stableQuestion(index: index, length: length, extending: status?.running == true,
+        let screen = stableQuestion(index: index, length: length, runningEnd: status?.endsAt,
                                     silver: context.session.silver, lingo: context.lingo, locale: context.session.locale)
         await editScreen(chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
                          text: screen.text, replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: screen.rows), bot: context.bot)
@@ -191,10 +270,11 @@ extension CapitalController {
 
     /// «🫏 Найняти віз на 1 день за 670 срібників?», the terms, and the price as
     /// the silver line every spending question ends with.
-    func stableQuestion(index: Int, length: WagonLengthDTO, extending: Bool, silver: Int,
-                        lingo: Lingo, locale: String) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
+    func stableQuestion(index: Int, length: WagonLengthDTO, runningEnd: Date?, silver: Int, lingo: Lingo, locale: String,
+                        now: Date = Date()) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
         let label = WagonDisplay.lengthLabel(minutes: length.minutes, lingo: lingo, locale: locale)
-        let question = lingo.localize(extending ? "stable.hire.question_more" : "stable.hire.question",
+        let seen = WagonMath.hireStamp(end: runningEnd, now: now)
+        let question = lingo.localize(seen != 0 ? "stable.hire.question_more" : "stable.hire.question",
                                       count: length.silver, locale: locale,
                                       interpolations: ["length": label, "price": "\(length.silver)"])
         let text = [
@@ -208,7 +288,45 @@ extension CapitalController {
         ].joined(separator: "\n")
         let rows = [[
             TGInlineKeyboardButton(text: lingo.localize("stable.hire.confirm", locale: locale),
-                                   callbackData: "stable:ok:\(index):\(length.silver)"),
+                                   callbackData: "stable:ok:\(index):\(length.silver):\(seen)"),
+            TGInlineKeyboardButton(text: lingo.localize("stable.hire.cancel", locale: locale), callbackData: "stable:open")
+        ]]
+        return (text, rows)
+    }
+
+    private func editToHorseQuestion(index: Int, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard let length = HorseCatalog.length(at: index) else {
+            try await editToStable(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let status = try await HorseService.status(for: context.session, on: context.db)
+        let screen = horseQuestion(index: index, length: length, runningEnd: status?.endsAt, silver: context.session.silver,
+                                   lingo: context.lingo, locale: context.session.locale)
+        await editScreen(chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
+                         text: screen.text, replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: screen.rows), bot: context.bot)
+    }
+
+    /// «🐴 Найняти рисака на 3 год за 100 срібників?», the terms, and the price
+    /// as the silver line every spending question ends with.
+    func horseQuestion(index: Int, length: WagonLengthDTO, runningEnd: Date?, silver: Int, lingo: Lingo, locale: String,
+                       now: Date = Date()) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
+        let label = WagonDisplay.lengthLabel(minutes: length.minutes, lingo: lingo, locale: locale)
+        let seen = WagonMath.hireStamp(end: runningEnd, now: now)
+        let question = lingo.localize(seen != 0 ? "stable.horse.question_more" : "stable.horse.question",
+                                      count: length.silver, locale: locale,
+                                      interpolations: ["length": label, "price": "\(length.silver)"])
+        let text = [
+            "\(HorseDisplay.icon) \(question)",
+            lingo.localize("stable.horse.terms", locale: locale, interpolations: [
+                "road": Countdown.format(Int(HorseCatalog.travelSeconds), lingo: lingo, locale: locale),
+                "base": Countdown.format(Int(TravelService.travelSeconds), lingo: lingo, locale: locale)
+            ]),
+            "",
+            RequirementLine.silver(have: silver, need: length.silver, lingo: lingo, locale: locale)
+        ].joined(separator: "\n")
+        let rows = [[
+            TGInlineKeyboardButton(text: lingo.localize("stable.hire.confirm", locale: locale),
+                                   callbackData: "stable:horse_ok:\(index):\(length.silver):\(seen)"),
             TGInlineKeyboardButton(text: lingo.localize("stable.hire.cancel", locale: locale), callbackData: "stable:open")
         ]]
         return (text, rows)
@@ -216,11 +334,11 @@ extension CapitalController {
 
     // MARK: - The hire
 
-    /// `stable:ok:<index>:<price>`. The refusal is the tap's only answer, so
-    /// the tap is answered late — in the `catch` too, so a throw never leaves
-    /// the button spinning.
-    private func handleStableHire(index: Int, price: Int, query: TGCallbackQuery, messageId: Int, isPhoto: Bool,
-                                  context: Context) async throws {
+    /// `stable:ok:<index>:<price>:<seen>` or `stable:horse_ok:<index>:<price>:<seen>`.
+    /// The refusal is the tap's only answer, so the tap is answered late — in
+    /// the `catch` too, so a throw never leaves the button spinning.
+    private func handleStableHire(offer: StableOffer, index: Int, price: Int, seenStamp: Int, query: TGCallbackQuery,
+                                  messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
         func answer(_ alert: String? = nil) async {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
@@ -229,17 +347,17 @@ extension CapitalController {
         do {
             // The answer names its question: a length or a price a reload moved
             // since is not what the player agreed to.
-            guard let length = WagonCatalog.length(at: index), length.silver == price else {
+            guard let length = offer.length(at: index), length.silver == price else {
                 await answer()
                 try await editToStable(messageId: messageId, isPhoto: isPhoto, context: context)
                 return
             }
-            switch try await WagonService.hire(lengthIndex: index, for: context.session, on: context.db) {
+            switch try await offer.hire(lengthIndex: index, seenStamp: seenStamp, for: context.session, on: context.db) {
             case .hired(_, let hired, _):
                 await answer()
                 try await editToStable(messageId: messageId, isPhoto: isPhoto, context: context)
                 let label = WagonDisplay.lengthLabel(minutes: hired.minutes, lingo: lingo, locale: locale)
-                await postStatusBanner("\(WagonDisplay.icon) " + lingo.localize("stable.hire.done", locale: locale, interpolations: [
+                await postStatusBanner("\(offer.icon) " + lingo.localize(offer.doneKey, locale: locale, interpolations: [
                     "length": label, "price": "\(hired.silver)"
                 ]), context: context)
             case .notEnoughSilver(let have, let need):
@@ -247,8 +365,8 @@ extension CapitalController {
                     "have": "\(have)", "need": "\(need)"
                 ]))
             case .notInTown:
-                await answer(lingo.localize("stable.hire.not_in_town", locale: locale))
-            case .unknownLength:
+                await answer(lingo.localize(offer.notInTownKey, locale: locale))
+            case .unknownLength, .stale:
                 await answer()
                 try await editToStable(messageId: messageId, isPhoto: isPhoto, context: context)
             }
