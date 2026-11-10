@@ -1353,9 +1353,43 @@ extension EstateController {
 
         // The estate root is level artwork, so this screen is usually a caption
         // rather than text — `editScreen` reads which off the message itself.
-        await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
+        // A room with a picture of its own swaps it in, and the house and the
+        // root put the manor back; the swap happens only when the message shows
+        // something else, so every other redraw is still a caption edit.
+        if let art = Self.screenArt(for: data, estateLevel: context.session.estateLevel) {
+            await editScreen(message, art: art, text: text, replyMarkup: inline, bot: context.bot)
+        } else {
+            await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
+        }
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
+    }
+
+    /// The picture a screen of the estate's one message wears (2026-11-10).
+    /// A room's own is `Assets/estate/<room>.jpg`; the house and the root wear
+    /// the manor the message was sent with, which is what takes a room's
+    /// picture off again on the way out. Nil leaves the picture alone — a
+    /// room's sub-screens, and every room without art yet. A new room's
+    /// picture is a file and a line here.
+    static func screenArt(for callback: String, estateLevel: Int) -> String? {
+        switch callback {
+        case "estate:home:warehouse":
+            return "\(projectPath)/Assets/estate/warehouse.jpg"
+        case "estate:home:training":
+            return "\(projectPath)/Assets/estate/training.jpg"
+        case "estate:home:kitchen":
+            return "\(projectPath)/Assets/estate/kitchen.jpg"
+        case "estate:home:workshop":
+            return "\(projectPath)/Assets/estate/workshop.jpg"
+        case "estate:home", "estate:root", "estate:plot":
+            return "\(projectPath)/Assets/estate/level_\(estateLevel).jpg"
+        default:
+            // A built plot's card: `plot:<type>` → `plot_<type>.jpg`, so a
+            // plot type's picture is a dropped file (the sawmill is `forest`).
+            // A type without one keeps the manor the plot list wears.
+            guard callback.hasPrefix("plot:") else { return nil }
+            return "\(projectPath)/Assets/estate/plot_\(callback.dropFirst("plot:".count)).jpg"
+        }
     }
 
     // MARK: - The warehouse's cards (2026-11-01)
@@ -2443,7 +2477,7 @@ extension EstateController {
             let plots = try await PlotService.estatePlots(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, art: "estate:plot", context: context)
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
@@ -2501,7 +2535,7 @@ extension EstateController {
                                        at: now, lingo: context.lingo, locale: locale)
         let inline = ctrl.plotCardKeyboard(slot: slot, hasYield: standing > 0,
                                            lingo: context.lingo, locale: locale)
-        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        try await editEstateMessage(message: message, text: body, inline: inline, art: "plot:\(type.rawValue)", context: context)
         return true
     }
 
@@ -2555,7 +2589,7 @@ extension EstateController {
             let plots = try await PlotService.estatePlots(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, art: "estate:plot", context: context)
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
@@ -2680,7 +2714,7 @@ extension EstateController {
         let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: context.session.locale)
         let upgradeReady = ReadyChecks.training(context.session, held: try await ReadyChecks.held(for: context.session, on: context.db))
         let inline = ctrl.trainingGroundKeyboard(session: context.session, upgradeReady: upgradeReady, lingo: context.lingo, locale: context.session.locale)
-        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        try await editEstateMessage(message: message, text: body, inline: inline, art: "estate:home:training", context: context)
     }
 
     /// The card for the next level — the build card at level 0. Requirements
@@ -2749,7 +2783,8 @@ extension EstateController {
              TGInlineKeyboardButton(text: back, callbackData: building ? "estate:home" : "estate:home:training")],
             RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:training:pin", lingo: lingo, locale: locale)
         ])
-        try await editEstateMessage(message: message, text: lines.joined(separator: "\n"), inline: keyboard, context: context)
+        try await editEstateMessage(message: message, text: lines.joined(separator: "\n"), inline: keyboard,
+                                    art: "estate:home:training", context: context)
     }
 
     /// `estate:training:spar` — spawn the dummy fight, identical to the
@@ -3886,7 +3921,13 @@ extension EstateController {
 
     /// Edit the source message in place — text or caption depending on
     /// whether the message is a photo (estate root may be artwork).
-    fileprivate static func editEstateMessage(message: TGMaybeInaccessibleMessage, text: String, inline: TGInlineKeyboardMarkup, context: Context) async throws {
-        await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
+    /// `art` names the room whose picture the screen wears (`screenArt`).
+    fileprivate static func editEstateMessage(message: TGMaybeInaccessibleMessage, text: String, inline: TGInlineKeyboardMarkup,
+                                              art room: String? = nil, context: Context) async throws {
+        if let room, let art = screenArt(for: room, estateLevel: context.session.estateLevel) {
+            await editScreen(message, art: art, text: text, replyMarkup: inline, bot: context.bot)
+        } else {
+            await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
+        }
     }
 }

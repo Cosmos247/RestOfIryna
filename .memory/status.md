@@ -37,6 +37,8 @@ the wagon is left behind. 599 tests.
 `spec-horse.md`). Every trip set out while its hire runs takes 1 min 30 s, for 1 год / 3 год / 1 день / 7 днів at 50 / 100 / 340 / 1,080 🪙; a wagon alongside
 keeps its 3 min; alone it asks nothing at the door. Its end is one notice from the watchman. A double tap on «✅ Найняти» pays once, the wagon's too (`WagonMath.hireStamp`). The digest moved `records` alone. 612 tests.
 **A double tap** (2026-11-09, later, NOT LIVE, Swift only): the Master's enchant, the estate upgrade and the Training Ground each pay once now; four other live buttons still can pay twice (`TODO.md` → Open).
+**The estate's rooms and plots wear their own pictures** (2026-11-10, NOT LIVE, built and never run against Telegram; `editScreen(_:art:…)`, `EstateController.screenArt`, nine files in `Assets/estate/`): the photo of the estate's one message is swapped in place and the manor put back on the way out.
+
 **«✅» after a button's name** (2026-11-09, night, NOT LIVE, Swift only; `ReadyMark`, `ReadyChecks`): when every line on the card behind it is green, on the recipes, the armour's enchant, the plot picker and the single upgrades. The tincture list has no 🧪.
 
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest

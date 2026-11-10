@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-09)* **«✅» after a button's name, and `88c886f`'s hash fill** — Swift only, NOT deployed, no copy, no migration, the digest unmoved: on the recipes, the armour's enchant, the plot picker and the single upgrades; the tincture list without 🧪. 619 tests.
+- *(this commit, 11-10)* **the estate's rooms and plots wear their own pictures, and `b7955d5`'s hash fill** — Swift + nine files in `Assets/estate/`, NOT deployed, no copy, no migration, the digest unmoved: the warehouse, the kitchen, the workshop, the Training Ground and the five plot cards swap the photo of the estate's one message in place (`editScreen(_:art:…)`, `EstateController.screenArt`). **Built, never run against Telegram.**
+- `b7955d5` (11-09) **«✅» after a button's name, and `88c886f`'s hash fill** — Swift only, NOT deployed, no copy, no migration, the digest unmoved: on the recipes, the armour's enchant, the plot picker and the single upgrades; the tincture list without 🧪. 619 tests.
 - `88c886f` (11-09) **a double tap pays once on the enchant, the estate and the Training Ground, and `334ecc5`'s hash fill** — Swift only, NOT deployed, no migration, the digest unmoved: each
   yes names the level or tier its question showed, a mismatch is `.stale`. 612 tests.
 - `334ecc5` (11-09) **the stable's Rysak «🐴 Рисак», and `ea9db6e`'s hash fill** — Swift + `stable.json` → `horse` (schema stays v33, no v33 binary deployed) + uk/en + `CreateHorses`
@@ -1043,7 +1044,15 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-09, night («✅» after a button's name) — *(this commit)*
+## Session — 2026-11-10, night (pictures for the estate's rooms and plots) — *(this commit)*
+
+**The ask:** the owner sent nine pictures, one screen at a time — the warehouse, the Training Ground, the kitchen, the sawmill, the farm, the mine, the hazel, the workshop, the coop — ahead of the deploy.
+
+**Built:** the estate is ONE message sent with the manor's `level_<N>.jpg` and redrawn in place, so a room had no slot. `editScreen(_:art:…)` (`ScreenEdit.swift`) swaps the photo with `editMessageMedia` — its own params struct, because the SDK's carry the media as a `file_id` string; a first upload rides as `attach://photo_file` — and falls back to the plain caption edit on a missing file, a text message or a refusal (`[SCREEN] … refused its picture`). `PhotoCache` now keeps each asset's `file_unique_id`s (`note`, `shows`), so a redraw inside a room stays a caption edit. `EstateController.screenArt(for:estateLevel:)` maps a screen to its file: `estate:home:warehouse|kitchen|workshop|training` → `<room>.jpg`; `plot:<type>` → `plot_<type>.jpg` (a plot type's picture is a dropped file; the sawmill is `forest`); `estate:home`, `estate:root`, `estate:plot` → the manor, which is what takes a room's picture off on the way out. The Training Ground's build card wears the picture too; a plot's build card does not — **the owner was asked which way to make them agree and has not answered.**
+
+**Verified:** the build only. **NOT verified:** nothing has run against Telegram — the test bot was started on the first build (the warehouse alone) and stopped by the owner with no tap seen in its log; the multipart upload through `editMessageMedia` is new to the project. The files were placed by the order and timestamps the owner sent them in, not by looking at them. Also written: the testers' list of everything undeployed (https://claude.ai/artifact/Ea6S4khWip7y5TWvrmKZeT, and as text in the chat; «маєток», never «садиба», the owner's correction).
+
+## Session — 2026-11-09, night («✅» after a button's name) — `b7955d5`
 
 **The ask:** a player's idea relayed with a screenshot («А можна додати галочки ✅ якщо вистачає складових на настоянки?»), and the owner: for everything, propose how. A proposal with a played sample, then the owner: «Галочка повинна бути після назви» and a quiz. **Picked:** after the name; the tincture list without 🧪 (I had first shown ✅ in its place; after the name the longest label would lose exactly the mark); on recipes, the choices (enchant, plot picker) and the single upgrades, not the silver-only lists; nothing when something is short; «Повну сумку не потрібно показувати», read as the room being no part of the mark.
 

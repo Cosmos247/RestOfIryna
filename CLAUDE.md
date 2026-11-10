@@ -953,6 +953,11 @@ either, and which one a screen has depends on whether it was sent with artwork �
 `editMessageText` against a photo fails; `editScreen` falls back to the other field and logs the
 recovery. Never call `editMessageText` / `editMessageCaption` directly.
 
+**A room of the estate wears its own picture by a swap in place** (2026-11-10, the warehouse first):
+`editScreen(_:art:…)` changes the photo of the estate's one message, and `EstateController.screenArt`
+names which screen wears what — the house and the root put the manor back. A new room's picture is a
+file in `Assets/estate/` and a line there, never a second message.
+
 **A message whose buttons you will one day need to take away must have its id kept.**
 `_ = try? await bot.sendMessage(...)` throws away the only handle on it, and the buttons then
 outlive the state they act on. Store the id beside that state (`PendingChallenge.inviteMessageId`)

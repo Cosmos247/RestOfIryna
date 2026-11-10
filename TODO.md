@@ -2161,6 +2161,14 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-10, night — pictures for the estate's rooms and plots (NOT LIVE; Swift + nine files in `Assets/estate/`, no copy, no migration, the digest unmoved). Built only: nothing here has run against Telegram.**
+- [ ] «🏠 Дім» → «📦 Склад»: the photo becomes the warehouse (the FIRST tap after a boot uploads the file — the new multipart path); a category, a card, the wagon and back keep it; «назад у дім» puts the manor back; a second visit swaps from the cache
+- [ ] the same for the kitchen, the workshop and the Training Ground (its build / upgrade card too)
+- [ ] «🌾 Ділянка» → a built farm, sawmill, mine, coop and the hazel: each its own picture; back to the list and a harvest's redraw put the manor back
+- [ ] every picture is on its own screen (placed by the order they were sent, not looked at)
+- [ ] no `[SCREEN] … refused its picture` line in the log
+- [ ] OPEN, asked 11-10, unanswered: a build card and the picture — the Training Ground's wears it before it is built, a plot's does not
+
 **Added 2026-11-09, night — «✅» after a button's name (NOT LIVE; Swift only, no copy, no migration, the digest unmoved). The checks ran against a scratch Postgres; no screen has been drawn in Telegram:**
 - [ ] The fortune teller's «🧪 Настоянки»: no 🧪 on the five buttons, ✅ after the name only where the card's lines are all green; one unit or one silver short, nothing. Does «Середня настоянка зцілення ✅» fit on a narrow phone?
 - [ ] With the wagon in town the tinctures count its cargo; ridden out «🐎 Верхи», they do not.

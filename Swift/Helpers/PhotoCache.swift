@@ -46,6 +46,29 @@ public actor PhotoCache {
     public func set(assetPath: String, fileId: String) {
         fileIds[assetPath] = fileId
     }
+
+    /// Local asset path → the `file_unique_id` of every size Telegram made of
+    /// it. A `file_id` may differ from one message to the next; the unique id
+    /// does not, so it is what answers "is this message already showing that
+    /// picture?" — the question `editScreen(_:art:…)` asks before it swaps one.
+    private var uniqueIds: [String: Set<String>] = [:]
+
+    /// Note what a message that carries `assetPath` came back with.
+    public func note(assetPath: String, photo: [TGPhotoSize]?) {
+        guard let photo, !photo.isEmpty else { return }
+        uniqueIds[assetPath, default: []].formUnion(photo.map(\.fileUniqueId))
+        if fileIds[assetPath] == nil, let largest = photo.max(by: { ($0.fileSize ?? 0) < ($1.fileSize ?? 0) }) {
+            fileIds[assetPath] = largest.fileId
+        }
+    }
+
+    /// True only when the cache KNOWS the photo is this asset. After a restart
+    /// it knows nothing, and the caller swaps a picture that may already be
+    /// there — one wasted call, never a wrong picture.
+    public func shows(assetPath: String, photo: [TGPhotoSize]?) -> Bool {
+        guard let photo, let known = uniqueIds[assetPath] else { return false }
+        return photo.contains { known.contains($0.fileUniqueId) }
+    }
 }
 
 /// Send a player-visible photo, reusing Telegram's cached `file_id` after
@@ -104,10 +127,9 @@ public func sendCachedPhoto(
 
     // Capture fileId only on first successful upload (when we sent .file).
     // Telegram returns multiple `TGPhotoSize` entries (different
-    // resolutions); the largest fileSize preserves the original.
-    if cachedId == nil, let largest = sent.photo?.max(by: { ($0.fileSize ?? 0) < ($1.fileSize ?? 0) }) {
-        await PhotoCache.shared.set(assetPath: assetPath, fileId: largest.fileId)
-    }
+    // resolutions); the largest fileSize preserves the original. The unique
+    // ids are noted on every send, for `editScreen(_:art:…)`.
+    await PhotoCache.shared.note(assetPath: assetPath, photo: sent.photo)
 
     return sent.messageId
 }

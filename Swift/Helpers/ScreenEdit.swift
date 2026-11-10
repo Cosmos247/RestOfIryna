@@ -173,3 +173,91 @@ public func editScreen(
         origin: origin
     )
 }
+
+// MARK: - A screen with a picture of its own (2026-11-10)
+
+/// `editMessageMedia`, with room for a file. The SDK's own params carry the
+/// media as a string — a `file_id` — and have nowhere to put the bytes of a
+/// first upload; here they ride as a second multipart part the media names
+/// through `attach://photo_file`.
+private struct ArtSwapParams: Encodable {
+    let chatId: TGChatId
+    let messageId: Int
+    let media: TGInputMediaPhoto
+    let replyMarkup: TGInlineKeyboardMarkup?
+    let photoFile: TGInputFile?
+
+    enum CodingKeys: String, CodingKey {
+        case chatId = "chat_id"
+        case messageId = "message_id"
+        case media
+        case replyMarkup = "reply_markup"
+        case photoFile = "photo_file"
+    }
+}
+
+/// Redraw the message a callback arrived on AND give it the screen's own
+/// picture — the warehouse's shelves in place of the manor the estate's root
+/// was sent with, and the manor back on the way out.
+///
+/// The picture is swapped only when the message is a photo that is not already
+/// showing it (`PhotoCache.shows`), so a redraw inside one room stays the
+/// caption edit it always was. Everything that can go wrong — the file missing,
+/// a text message, Telegram refusing the swap — ends in the plain `editScreen`:
+/// the screen is drawn under whatever picture it has, never left undrawn.
+/// The caption cap is unchanged: these screens were captions already.
+@discardableResult
+public func editScreen(
+    _ message: TGMaybeInaccessibleMessage,
+    art assetPath: String,
+    text: String,
+    parseMode: TGParseMode = .html,
+    replyMarkup: TGInlineKeyboardMarkup? = nil,
+    bot: TGBot,
+    origin: String = #function
+) async -> Bool {
+    func plain() async -> Bool {
+        return await editScreen(message, text: text, parseMode: parseMode,
+                                replyMarkup: replyMarkup, bot: bot, origin: origin)
+    }
+
+    let current = message.getMessage()?.photo
+    guard current != nil else { return await plain() }
+    if await PhotoCache.shared.shows(assetPath: assetPath, photo: current) { return await plain() }
+
+    let cachedId = await PhotoCache.shared.fileId(for: assetPath)
+    var upload: TGInputFile?
+    if cachedId == nil {
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: assetPath)) else { return await plain() }
+        let filename = (assetPath as NSString).lastPathComponent
+        let mime = (filename as NSString).pathExtension.lowercased() == "png" ? "image/png" : "image/jpeg"
+        upload = TGInputFile(filename: filename, data: data, mimeType: mime)
+    }
+
+    let params = ArtSwapParams(
+        chatId: .chat(message.chat.id),
+        messageId: message.messageId,
+        media: TGInputMediaPhoto(type: .photo, media: cachedId ?? "attach://photo_file",
+                                 caption: text, parseMode: parseMode),
+        replyMarkup: replyMarkup,
+        photoFile: upload
+    )
+    let base = await bot.tgURI
+    let botId = await bot.botId
+    guard let url = URL(string: "\(base)/bot\(botId)/editMessageMedia") else { return await plain() }
+
+    do {
+        let result: TGMessageOrBool = try await bot.tgClient.post(url, params: params, as: nil)
+        if case .message(let edited) = result {
+            await PhotoCache.shared.note(assetPath: assetPath, photo: edited.photo)
+        }
+        return true
+    } catch let error as TelegramAPIError where error.isNotModified {
+        return true
+    } catch let error as TelegramAPIError where error.isBenign {
+        return false
+    } catch {
+        appState?.logger.warning("[SCREEN] \(origin): message \(message.messageId) refused its picture \((assetPath as NSString).lastPathComponent): \(error) — redrawn without it")
+        return await plain()
+    }
+}
