@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-10)* **the estate's rooms and plots wear their own pictures, and `b7955d5`'s hash fill** — Swift + nine files in `Assets/estate/`, NOT deployed, no copy, no migration, the digest unmoved: the warehouse, the kitchen, the workshop, the Training Ground and the five plot cards swap the photo of the estate's one message in place (`editScreen(_:art:…)`, `EstateController.screenArt`). **Built, never run against Telegram.**
+- *(this commit, 11-10)* **the seven manor pictures replaced, the 11-10 23:05 deploy record, and `487b6b0`'s hash fill** — seven files in `Assets/estate/` (`level_1.jpg` … `level_7.jpg`, the owner's, 1280×853) + records, no code: NOT live — a REPLACED asset keeps its cached `file_id` until `pm2 restart ROI` (no build needed). Placed by the order they were sent, not looked at.
+- `487b6b0` (11-10) **the estate's rooms and plots wear their own pictures, and `b7955d5`'s hash fill** — Swift + nine files in `Assets/estate/`, NOT deployed, no copy, no migration, the digest unmoved: the warehouse, the kitchen, the workshop, the Training Ground and the five plot cards swap the photo of the estate's one message in place (`editScreen(_:art:…)`, `EstateController.screenArt`). **Built, never run against Telegram.**
 - `b7955d5` (11-09) **«✅» after a button's name, and `88c886f`'s hash fill** — Swift only, NOT deployed, no copy, no migration, the digest unmoved: on the recipes, the armour's enchant, the plot picker and the single upgrades; the tincture list without 🧪. 619 tests.
 - `88c886f` (11-09) **a double tap pays once on the enchant, the estate and the Training Ground, and `334ecc5`'s hash fill** — Swift only, NOT deployed, no migration, the digest unmoved: each
   yes names the level or tier its question showed, a mismatch is `.stale`. 612 tests.
@@ -1044,7 +1045,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-10, night (pictures for the estate's rooms and plots) — *(this commit)*
+## Session — 2026-11-10, night (pictures for the estate's rooms and plots) — `487b6b0`
 
 **The ask:** the owner sent nine pictures, one screen at a time — the warehouse, the Training Ground, the kitchen, the sawmill, the farm, the mine, the hazel, the workshop, the coop — ahead of the deploy.
 
@@ -1148,6 +1149,18 @@ carried. Gear on the wagon is read by no place in town (the Master and a trade n
 
 **Also:** the auto-memory index was at 97% of its 25,000-unit cap (a side agent's warning, relayed by the owner); 70 hooks were shortened,
 24,171 → 20,549 units, every pointer kept and checked; the old index is in the session scratchpad.
+
+## Deploy — 2026-11-10 23:05 (`11d16bb` → `487b6b0`) — the wagon, the Rysak, the door's question, the double tap, «✅», the estate's pictures
+
+On the owner's word («Запушив. Задеплой на пай та перезапусти бота»). A pull to `487b6b0` (six commits), a 149 s debug build on the Pi,
+the digest pre-flight matching the Mac in all 72 lines (schema v33, content hash `0b82dc59`, COMBINED `40f970baec4a21ce`), then
+`pm2 restart ROI && pm2 save` at **23:05:22** — two players on the road (trips ending 23:05:31 and 23:06:53), two expedition rows, nobody in a
+fight. Online and listening at 23:05:30, pm2 restarts 4, `ROI_PROJECT_PATH` intact. **The five migrations verified on the tables:** 91 rows in
+`_fluent_migrations` (86 + 5); `wagons` (with `left_home` default false), `wagon_cargo` (with tier / durability / max_durability /
+enchant_level), `horses`, `travel_state.crossing_seconds` (nullable; the trip begun before the restart holds NULL, the one after it a value);
+0 wagons, 0 horses, 52 users. The 403s after boot are the restart notice to players who blocked the bot. **Not verified:** the estate's
+pictures went live WITHOUT a walk on the test bot — no `[SCREEN] … refused its picture` line in the first minute, but nobody is known to have
+opened a room yet; the first tap on a room after this boot is the first run of the `editMessageMedia` upload.
 
 ## Deploy — 2026-11-07 21:16 (`46437bf` → `11d16bb`) — the trophies, the plants, the tinctures, every discard asked
 
